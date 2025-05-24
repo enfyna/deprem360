@@ -9,6 +9,7 @@ import { createContext, use, useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { locationStore } from "./AppStore";
 import { observer } from "mobx-react";
+import FloatingChatbot from '@/app/chatbot/page'; 
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -63,7 +64,9 @@ const RootLayoutComponent = ({
                     >
                         <Header></Header>
                         {children}
+                        <FloatingChatbot />
                     </ThemeProvider>
+                    
             </body>
         </html>
     );
