@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import 'leaflet/dist/leaflet.css';
 import { ThemeProvider } from "@/components/theme-provider";
 import { Header } from "@/components/ui/Header";
 
@@ -35,7 +36,7 @@ export default function RootLayout({
                     enableSystem
                     disableTransitionOnChange
                 >
-                <Header></Header>
+                    <Header></Header>
                     {children}
                 </ThemeProvider>
             </body>
