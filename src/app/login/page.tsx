@@ -36,7 +36,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="w-full min-h-screen flex items-center justify-center py-8 px-4 bg-gray-100 dark:bg-gray-900">
+        <div className="w-full min-h-screen flex items-center justify-center py-8 px-4">
             <Card className="p-8 w-full max-w-md shadow-xl">
                 <h2 className="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-gray-200">Giriş Yap</h2>
                 <CombinedLoginForm />
