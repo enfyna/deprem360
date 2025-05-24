@@ -45,8 +45,9 @@ const RegisterFormSchema = z.object({
 // ---
 export default function RegisterPage() {
     return (
-        <div className="w-100 min-h-screen flex items-center justify-center">
-            <Card className="p-8">
+        <div className="w-full min-h-screen flex items-center justify-center py-8 px-4"> {/* Changed w-100 to w-full, added padding and background for better page appearance */}
+            <Card className="p-8 w-full max-w-lg shadow-xl"> {/* Added w-full, max-w-lg and shadow-xl */}
+                <h2 className="text-2xl font-bold text-center mb-6 text-gray-800 dark:text-gray-200">Hesap Oluştur</h2> {/* Added a title to the form */}
                 <RegisterForm />
             </Card>
         </div>
@@ -61,7 +62,7 @@ function RegisterForm() {
     const locations = locationStore.locations;
     console.log('Locations:', locations);
 
-    
+    const [isLoading, setIsLoading] = useState(false); // Added loading state
     const [selectedProvinceDistricts, setSelectedProvinceDistricts] = useState<Array<{ name: string }>>([]);
 
     const form = useForm<z.infer<typeof RegisterFormSchema>>({
@@ -96,6 +97,7 @@ function RegisterForm() {
     }, [selectedProvince, locations, form]);
 
     async function onSubmit(data: z.infer<typeof RegisterFormSchema>) {
+        setIsLoading(true); // Set loading to true
         try {
             const res = await fetch('https://engaging-solely-maggot.ngrok-free.app/user/register', {
                 method: 'POST',
@@ -136,6 +138,8 @@ function RegisterForm() {
                 description: 'Sunucuya bağlanılamadı. Lütfen tekrar deneyin.',
                 variant: 'destructive',
             });
+        } finally {
+            setIsLoading(false); // Set loading to false in finally block
         }
     }
 
@@ -249,7 +253,11 @@ function RegisterForm() {
                     )}
                 />
 
-                <Button type="submit">Kayıt Ol</Button>
+                <div className="flex justify-center"> 
+                    <Button type="submit" disabled={isLoading} className="w-full"> {/* Changed md:w-auto to w-full */}
+                        {isLoading ? 'Kaydediliyor...' : 'Kayıt Ol'}
+                    </Button>
+                </div>
             </form>
         </Form>
     );

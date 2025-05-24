@@ -5,9 +5,11 @@ import { ModeToggle } from "./theme-toggle";
 import Cookies from "js-cookie";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "./navigation-menu";
 import { useState } from "react";
+import { useRouter } from 'next/navigation';
 
 export function Header() {
     const [token, setToken] = useState(Cookies.get('jwt_token'));
+    const router = useRouter();
 
     function logOff() {
         Cookies.remove("jwt_token");
@@ -34,14 +36,14 @@ export function Header() {
                             <NavigationMenuItem>
                                 <Link href="/register" legacyBehavior passHref>
                                     <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Kayit Ol
+                                        Kayıt Ol
                                     </NavigationMenuLink>
                                 </Link>
                             </NavigationMenuItem>
                             <NavigationMenuItem>
                                 <Link href="/login" legacyBehavior passHref>
                                     <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Giris Yap
+                                        Giriş Yap
                                     </NavigationMenuLink>
                                 </Link>
                             </NavigationMenuItem>
@@ -65,11 +67,17 @@ export function Header() {
                                 </Link>
                             </NavigationMenuItem>
                             <NavigationMenuItem>
-                                <Link href="/" onClick={logOff} passHref>
-                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Cikis Yap
-                                    </NavigationMenuLink>
-                                </Link>
+                                <NavigationMenuLink asChild>
+                                    <button
+                                        onClick={() => {
+                                            logOff();
+                                            router.push('/');
+                                        }}
+                                        className={navigationMenuTriggerStyle()}
+                                    >
+                                        Çıkış Yap
+                                    </button>
+                                </NavigationMenuLink>
                             </NavigationMenuItem>
                         </NavigationMenuList>
                     </NavigationMenu>

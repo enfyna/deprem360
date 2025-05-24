@@ -10,6 +10,7 @@ import api from "@/lib/axios";
 import { locationStore } from "./AppStore";
 import { observer } from "mobx-react";
 import FloatingChatbot from '@/app/chatbot/page'; 
+import { Toaster } from "@/components/ui/toaster"; // Added
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -64,6 +65,7 @@ const RootLayoutComponent = ({
                     >
                         <Header></Header>
                         {children}
+                        <Toaster /> {/* Added */}
                         <FloatingChatbot />
                     </ThemeProvider>
                     

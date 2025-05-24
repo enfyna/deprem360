@@ -5,6 +5,11 @@ import { Button } from "./button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./card";
 import { ScrollArea } from './scroll-area';
+import { Calendar } from "./calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface EarthquakeEvent {
   rms: string;
@@ -77,25 +82,59 @@ export function EarthquakeTable({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 border rounded-md dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <div>
             <label htmlFor="start-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Başlangıç Tarihi</label>
-            <Input 
-              id="start-date" 
-              type="text" 
-              placeholder="YYYY-AA-GG SS:DD:SS" 
-              value={currentFilters.start || ''} // Ensure value is not undefined
-              onChange={(e) => onFilterChange('start', e.target.value)}
-              className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal dark:bg-gray-700 dark:text-white dark:border-gray-600",
+                    !currentFilters.start && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {currentFilters.start ? format(new Date(currentFilters.start.split(' ')[0]), "PPP") : <span>Tarih seçin</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={currentFilters.start ? new Date(currentFilters.start.split(' ')[0]) : undefined}
+                  onSelect={(date) => {
+                    const timePart = currentFilters.start?.split(' ')[1] || '00:00:00';
+                    onFilterChange('start', date ? `${format(date, 'yyyy-MM-dd')} ${timePart}` : '')
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <label htmlFor="end-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bitiş Tarihi</label>
-            <Input 
-              id="end-date" 
-              type="text" 
-              placeholder="YYYY-AA-GG SS:DD:SS" 
-              value={currentFilters.end || ''} // Ensure value is not undefined
-              onChange={(e) => onFilterChange('end', e.target.value)}
-              className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal dark:bg-gray-700 dark:text-white dark:border-gray-600",
+                    !currentFilters.end && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {currentFilters.end ? format(new Date(currentFilters.end.split(' ')[0]), "PPP") : <span>Tarih seçin</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={currentFilters.end ? new Date(currentFilters.end.split(' ')[0]) : undefined}
+                  onSelect={(date) => {
+                    const timePart = currentFilters.end?.split(' ')[1] || '00:00:00';
+                    onFilterChange('end', date ? `${format(date, 'yyyy-MM-dd')} ${timePart}` : '')
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <label htmlFor="min-mag" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min. Büyüklük</label>
