@@ -4,19 +4,12 @@ import { MapContainer, TileLayer, WMSTileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 export default function MapView({
-    wmsUrl,
-    layers,
-    styles = '',
-    version = '1.1.1',
-    format = 'image/png',
-    transparent = true,
-    tiled = true,
+    layersInfo
 }) {
-    // Key olarak WMS URL + layers kullan (benzersiz olması yeterli)
-    const mapKey = `${wmsUrl}_${layers}`;
+    const mapKey = layersInfo.map(l => `${l.url}_${l.layers}`).join(',');
 
     return (
-        <div style={{ height: '100vh', width: '100%' }}>
+        <div style={{ height: '100vh', maxHeight: '800px', width: '100%' }}>
             <MapContainer
                 key={mapKey}
                 center={[39.0, 35.0]}
@@ -28,15 +21,17 @@ export default function MapView({
                     attribution='&copy; OpenStreetMap contributors'
                     url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                 />
-                <WMSTileLayer
-                    url={wmsUrl}
-                    layers={layers}
-                    format={format}
-                    transparent={transparent}
-                    tiled={tiled}
-                    version={version}
-                    styles={styles}
-                />
+                {layersInfo.map((layer, idx) => (
+                    <WMSTileLayer
+                        key={`${layer.url}_${layer.layers}_${idx}`}
+                        url={layer.url}
+                        layers={layer.layers}
+                        format="image/png"
+                        transparent={true}
+                        tiled={true}
+                        version="1.1.1"
+                    />
+                ))}
             </MapContainer>
         </div>
     );

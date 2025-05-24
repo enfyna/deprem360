@@ -2,11 +2,19 @@
 
 import { Card } from "@/components/ui/card";
 import { Duyurular } from "@/components/ui/Duyurular";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 
 const MapView = dynamic(() => import('@/components/ui/MapView'), { ssr: false });
+
+import { Earth, Building, Layers } from "lucide-react";
+
+const wmsList = [
+    { value: "afad_eq", label: "Depremler", icon: Earth },
+    { value: "afad_56", label: "Katman", icon: Layers },
+    { value: "afad_station", label: "Istasyonlar", icon: Building },
+];
 
 export default function Home() {
     const wmsSources: { [key: string]: { name: string, url: string, layers: string } } = {
@@ -27,29 +35,24 @@ export default function Home() {
         }
     };
 
-    const [selectedKey, setSelectedKey] = useState("afad_eq");
-    const selectedSource: any = wmsSources[selectedKey];
+    const [selectedKeys, setSelectedKeys] = useState<string[]>(["afad_station"]);
 
     return (
-        <main className="flex flex-row row-start-2 items-center sm:items-start">
-            <Card className="flex-grow flex flex-col justify-center items-center m-6">
+        <main className="flex flex-col md:flex-row row-start-2 items-center sm:items-start container">
+            <Card className="flex flex-col items-end m-6 container">
                 <MapView
-                    wmsUrl={selectedSource.url}
-                    layers={selectedSource.layers}
+                    layersInfo={selectedKeys.map(k => wmsSources[k])}
                 />
                 <div className="p-4">
-                    <Select defaultValue="afad_eq" onValueChange={(e) => { setSelectedKey(e); console.log(e) }}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Harita" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {Object.entries(wmsSources).map(([key, source]) => (
-                                <SelectItem key={key} value={key}>
-                                    {source.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <MultiSelect
+                        options={wmsList}
+                        onValueChange={setSelectedKeys}
+                        defaultValue={selectedKeys}
+                        placeholder="Katmanlar"
+                        variant="inverted"
+                        animation={2}
+                        maxCount={3}
+                    />
                 </div>
             </Card>
             <Duyurular></Duyurular>
