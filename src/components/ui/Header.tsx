@@ -30,9 +30,18 @@ export function Header() {
             </Link>
 
             <div className="flex gap-4">
-                {!token ?
+                
                     <NavigationMenu>
                         <NavigationMenuList>
+                            <NavigationMenuItem>
+                                <Link href="/help" legacyBehavior passHref>
+                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                        Yardım
+                                    </NavigationMenuLink>
+                                </Link>
+                            </NavigationMenuItem>
+                            {!token ?
+                            <>
                             <NavigationMenuItem>
                                 <Link href="/register" legacyBehavior passHref>
                                     <NavigationMenuLink className={navigationMenuTriggerStyle()}>
@@ -47,22 +56,13 @@ export function Header() {
                                     </NavigationMenuLink>
                                 </Link>
                             </NavigationMenuItem>
-                        </NavigationMenuList>
-                    </NavigationMenu>
-                    :
-                    <NavigationMenu>
-                        <NavigationMenuList>
+                            </>
+                            :
+                            <>
                             <NavigationMenuItem>
                                 <Link href="/dashboard" legacyBehavior passHref>
                                     <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                                         Dashboard
-                                    </NavigationMenuLink>
-                                </Link>
-                            </NavigationMenuItem>
-                            <NavigationMenuItem>
-                                <Link href="/chatbot" legacyBehavior passHref>
-                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Chatbot
                                     </NavigationMenuLink>
                                 </Link>
                             </NavigationMenuItem>
@@ -79,9 +79,11 @@ export function Header() {
                                     </button>
                                 </NavigationMenuLink>
                             </NavigationMenuItem>
+                            </>
+                            }
                         </NavigationMenuList>
                     </NavigationMenu>
-                }
+                
                 <ModeToggle></ModeToggle>
             </div >
         </div >
