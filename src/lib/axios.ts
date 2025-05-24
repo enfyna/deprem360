@@ -3,16 +3,19 @@ import Cookies from "js-cookie";
 
 const api = axios.create({
     baseURL: "https://engaging-solely-maggot.ngrok-free.app", // Your backend base URL
-    withCredentials: true, // This is important if your backend sets HTTP-only cookies
+    // withCredentials: true, // This is important if your backend sets HTTP-only cookies
 });
+
 
 // Request interceptor to add the JWT token to headers
 api.interceptors.request.use(
     (config) => {
         const token = Cookies.get("jwt_token");
+        console.log('token', token)
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        config.headers['ngrok-skip-browser-warning'] = '69420';
         return config;
     },
     (error) => {

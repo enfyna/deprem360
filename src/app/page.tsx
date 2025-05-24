@@ -3,12 +3,14 @@
 import { Card } from "@/components/ui/card";
 import { Duyurular } from "@/components/ui/Duyurular";
 import { MultiSelect } from "@/components/ui/multi-select";
+import { locationStore } from "@/app/AppStore";
 import dynamic from "next/dynamic";
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 
 const MapView = dynamic(() => import('@/components/ui/MapView'), { ssr: false });
 
 import { Earth, Building, Layers } from "lucide-react";
+import api from "@/lib/axios";
 
 const wmsList = [
     { value: "afad_eq", label: "Depremler", icon: Earth },
@@ -34,6 +36,10 @@ export default function Home() {
             layers: "afad:station",
         }
     };
+
+    const locations = locationStore.locations;
+    console.log('Locations:', locations);
+    console.log(locations);
 
     const [selectedKeys, setSelectedKeys] = useState<string[]>(["afad_station"]);
 

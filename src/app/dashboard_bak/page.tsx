@@ -1,8 +1,8 @@
 // Example: In your /dashboard page or any component that needs authenticated data
 'use client'
 import { useEffect, useState } from "react";
-import api from "@/lib/axios"; // Import your configured axios instance
 import Cookies from "js-cookie";
+import api from '@/lib/axios';
 
 export default function Dashboard() {
     const [userData, setUserData] = useState(null);
@@ -19,9 +19,10 @@ export default function Dashboard() {
                     return;
                 }
 
-                // Make a request to a protected endpoint using your configured axios instance
-                const response = await api.get("/user/profile"); // Example protected endpoint
+                const response = await api.get('/user');
+
                 setUserData(response.data);
+
             } catch (err) {
                 console.error("Failed to fetch user data:", err);
                 setError("Failed to load user data.");
