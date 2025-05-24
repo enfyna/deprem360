@@ -3,14 +3,12 @@
 import { Card } from "@/components/ui/card";
 import { Duyurular } from "@/components/ui/Duyurular";
 import { MultiSelect } from "@/components/ui/multi-select";
-import { locationStore } from "@/app/AppStore";
 import dynamic from "next/dynamic";
 import { useState, useEffect, useContext } from "react";
 
 const MapView = dynamic(() => import('@/components/ui/MapView'), { ssr: false });
 
 import { Earth, Building, Layers } from "lucide-react";
-import api from "@/lib/axios";
 
 const wmsList = [
     { value: "afad_eq", label: "Depremler", icon: Earth },
@@ -37,19 +35,17 @@ export default function Home() {
         }
     };
 
-    const locations = locationStore.locations;
-    console.log('Locations:', locations);
-    console.log(locations);
-
     const [selectedKeys, setSelectedKeys] = useState<string[]>(["afad_station"]);
 
     return (
-        <main className="flex flex-col md:flex-row row-start-2 items-center sm:items-start container">
-            <Card className="flex flex-col items-end m-6 container">
-                <MapView
-                    layersInfo={selectedKeys.map(k => wmsSources[k])}
-                />
-                <div className="p-4">
+        <main className="flex flex-col md:flex-row h-[calc(100vh-56px)] w-full overflow-hidden">
+            <Card className="flex flex-col items-end m-0 md:m-6 w-full md:w-3/4 h-1/2 md:h-full max-h-full">
+                <div className="flex-1 w-full h-full">
+                    <MapView
+                        layersInfo={selectedKeys.map(k => wmsSources[k])}
+                    />
+                </div>
+                <div className="p-4 w-full">
                     <MultiSelect
                         options={wmsList}
                         onValueChange={setSelectedKeys}
@@ -61,7 +57,9 @@ export default function Home() {
                     />
                 </div>
             </Card>
-            <Duyurular></Duyurular>
+            <div className="w-full md:w-1/4 h-1/2 md:h-full max-h-full flex flex-col">
+                <Duyurular />
+            </div>
         </main >
     );
 }

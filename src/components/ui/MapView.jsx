@@ -9,7 +9,7 @@ export default function MapView({
     const mapKey = layersInfo.map(l => `${l.url}_${l.layers}`).join(',');
 
     return (
-        <div style={{ height: '100vh', maxHeight: '800px', width: '100%' }}>
+        <div style={{ height: '100%', width: '100%' }}>
             <MapContainer
                 key={mapKey}
                 center={[39.0, 35.0]}
