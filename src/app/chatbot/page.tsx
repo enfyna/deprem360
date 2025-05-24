@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import api from '@/lib/axios'; // API istemcinizi import edin
+import { useTheme } from 'next-themes';
 
 interface Message {
     id: number;
@@ -104,9 +105,8 @@ const FloatingChatbot: React.FC = () => {
         setIsChatOpen(prev => !prev);
     };
 
-    // ... (JSX kısmı aynı kalacak, buraya eklemiyorum)
-    // Önceki yanıttaki JSX'i kullanabilirsiniz.
-    // Sadece handleAskQuestion fonksiyonu değişti.
+    const { theme } = useTheme();
+    const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
     return (
         <>
@@ -122,9 +122,13 @@ const FloatingChatbot: React.FC = () => {
                 <div className="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                         <img
-                            src="/Deprem360.png" // Ensure this path is correct (e.g., in public folder)
+                            src="/chatgpt.png" // Ensure this path is correct (e.g., in public folder)
                             alt="Deprem360 Logo"
-                            className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+                            // if theme is dark make logo white
+                            style={{
+                                filter: isDarkMode ? 'invert(1)' : 'none',
+                            }}
+                            className="w-10 h-10 rounded-full object-cover"
                         />
                         <h1 className="text-md sm:text-lg font-semibold text-gray-800 dark:text-gray-100">
                             Ben 360, Nasıl yardımcı olabilirim?
