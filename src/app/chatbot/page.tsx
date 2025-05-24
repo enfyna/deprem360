@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
-import Image from 'next/image';
 
 interface Message {
     id: number;
@@ -75,13 +74,11 @@ const ChatbotPage: React.FC = () => {
             <div className="w-full max-w-2xl bg-white dark:bg-gray-800 shadow-xl rounded-lg flex flex-col h-[calc(100vh-4rem)] sm:h-[calc(100vh-6rem)]">
                 {/* Header */}
                 <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center">
-                    <Image
-                        src="/chatgpt.png"
+                    <img
+                        src="/Deprem360.png"
                         alt="Deprem360 Logo"
-                        width={300}
-                        height={300}
-                        className="h-10 w-auto"
-                    ></Image>
+                        className="w-30 h-20 sm:w-24 sm:h-24 mb-3 object-contain"
+                    />
                     <h1 className="text-xl sm:text-2xl font-semibold text-gray-800 dark:text-gray-100">
                         Hoşgeldiniz, Ben 360
                     </h1>
