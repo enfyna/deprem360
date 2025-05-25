@@ -4,9 +4,9 @@ import { MapContainer, TileLayer, WMSTileLayer, Marker, Popup } from 'react-leaf
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-// Custom icon for earthquake markers (optional, but good for UX)
-const earthquakeIcon = new L.Icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png', // Default Leaflet icon, replace if you have a custom one
+// Default Leaflet icon for custom markers
+const defaultIcon = new L.Icon({
+    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
     shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
     iconSize: [25, 41],
@@ -15,21 +15,50 @@ const earthquakeIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
+// Custom icon for earthquake markers
+const earthquakeIcon = new L.Icon({
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png', // Example: can be different
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
+    // You could add a class here to style it differently via CSS e.g. className: 'earthquake-marker-icon'
+});
+
+/**
+ * @typedef {Object} CustomMarker
+ * @property {number[]} position - [latitude, longitude]
+ * @property {string} [key] - Optional unique key for the marker
+ * @property {L.Icon} [icon] - Optional custom Leaflet icon
+ * @property {React.ReactNode} [popupContent] - Optional content for the marker's popup
+ * @property {string} [title] - Optional title for the marker (used in help/page.tsx)
+ * @property {string} [description] - Optional description for the marker (used in help/page.tsx)
+ */
+
+import { CustomMarker } from "@/app/help/page"; // Import the type if not already
+
 export default function MapView({
-    layersInfo,
-    earthquakeEvents // New prop for earthquake data
+    layersInfo = [], // Default to empty array
+    earthquakeEvents = [], // Default to empty array
+    /** @type {CustomMarker[]} */
+    customMarkers = CustomMarker || [], // Default to empty array
+    center = [39.0, 35.0], // Default center
+    zoom = 6, // Default zoom
+    style // Allow passing style
 }) {
-    // Combine WMS layers and earthquake markers for a unique key to force re-render if either changes
     const wmsKey = layersInfo.map(l => `${l.url}_${l.layers}`).join(',');
-    const earthquakesKey = earthquakeEvents && earthquakeEvents.length > 0 ? `earthquakes-${earthquakeEvents.length}-${earthquakeEvents[0]?.eventID}` : 'no-earthquakes';
-    const mapKey = `${wmsKey}_${earthquakesKey}`;
+    const earthquakesKey = earthquakeEvents.length > 0 ? `earthquakes-${earthquakeEvents.length}-${earthquakeEvents[0]?.eventID || 'id'}` : 'no-earthquakes';
+    const customMarkersKey = customMarkers.length > 0 ? `custom-${customMarkers.length}-${customMarkers[0]?.position?.join('')}` : 'no-custom-markers';
+    const mapKey = `${wmsKey}_${earthquakesKey}_${customMarkersKey}_${center.join('')}_${zoom}`;
 
     return (
-        <div style={{ height: '100%', width: '100%' }}>
+        <div style={style || { height: '100%', width: '100%' }}>
             <MapContainer
-                key={mapKey} // Use the combined key
-                center={[39.0, 35.0]}
-                zoom={6}
+                key={mapKey}
+                center={center} // Use prop or default
+                zoom={zoom} // Use prop or default
                 scrollWheelZoom={true}
                 style={{ height: '100%', width: '100%', zIndex: 0 }}
             >
@@ -49,12 +78,11 @@ export default function MapView({
                     />
                 ))}
 
-                {/* Render earthquake markers */}
-                {earthquakeEvents && earthquakeEvents.map(event => (
+                {earthquakeEvents.map(event => (
                     <Marker 
-                        key={event.eventID} 
+                        key={event.eventID || `eq-${event.latitude}-${event.longitude}`}
                         position={[parseFloat(event.latitude), parseFloat(event.longitude)]}
-                        icon={earthquakeIcon} // Apply custom icon
+                        icon={earthquakeIcon} 
                     >
                         <Popup>
                             <b>Lokasyon:</b> {event.location}<br />
@@ -63,6 +91,23 @@ export default function MapView({
                             <b>Tarih:</b> {event.date}<br />
                             <b>Tip:</b> {event.type}
                         </Popup>
+                    </Marker>
+                ))}
+
+                {/* Render custom markers */}
+                {customMarkers.map((marker, idx) => (
+                    <Marker
+                        key={marker.key || marker.title || `custom-${idx}`} // Use marker.title as a fallback key if needed
+                        position={marker.position} // Expects [lat, lon]
+                        icon={marker.icon || defaultIcon} // Allow custom icon per marker or use default
+                    >
+                        {(marker.popupContent || marker.title) && ( // Display popup if content or title exists
+                            <Popup>
+                                {marker.title && <h4>{marker.title}</h4>}
+                                {marker.description && <p>{marker.description}</p>}
+                                {marker.popupContent}
+                            </Popup>
+                        )}
                     </Marker>
                 ))}
             </MapContainer>

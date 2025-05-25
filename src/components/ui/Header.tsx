@@ -6,6 +6,7 @@ import Cookies from "js-cookie";
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "./navigation-menu";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
+import { useTheme } from "next-themes";
 
 export function Header() {
     const [token, setToken] = useState(Cookies.get('jwt_token'));
@@ -17,16 +18,19 @@ export function Header() {
         setToken('');
     }
 
+    const { theme } = useTheme();
+    const isDarkMode = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    
     return (
         <div className="w-full z-50 rounded-none border-b bg-card text-card-foreground shadow sticky top-0 p-1 flex justify-between">
             <Link href={'/'}>
                 <Image
-                    src="/chatgpt.png"
+                    src="/depremLogo.png"
                     alt="Deprem360 Logo"
-                    width={150}
-                    height={50}
-                    className="h-10 w-auto"
-                ></Image>
+                    width={300}
+                    height={300}
+                    className={isDarkMode ? "dark:invert" : ""}
+                />
             </Link>
 
             <div className="flex gap-4">
