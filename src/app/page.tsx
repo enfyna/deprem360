@@ -120,10 +120,7 @@ export default function Home() {
                 }
             });
             const response = await axios.get(
-                `https://servisnet.afad.gov.tr/apigateway/deprem/apiv2/event/filter?${new URLSearchParams(params).toString()}`,
-                {
-                    headers: { Host: 'servisnet.afad.gov.tr' }
-                }
+                `https://engaging-solely-maggot.ngrok-free.app/earthquakes?${new URLSearchParams(params).toString()}`
             );
             setEarthquakes(response.data as EarthquakeEvent[]);
         } catch (err) {
