@@ -10,11 +10,13 @@ import { useTheme } from "next-themes";
 
 export function Header() {
     const [token, setToken] = useState(Cookies.get('jwt_token'));
+    const [isAdmin, setIsAdmin] = useState(Cookies.get('is_admin'));
     const router = useRouter();
 
     function logOff() {
         Cookies.remove("jwt_token");
         Cookies.remove("user_id");
+        Cookies.remove('is_admin')
         setToken('');
     }
 
@@ -32,62 +34,69 @@ export function Header() {
                     className={isDarkMode ? "dark:invert" : ""}
                 />
             </Link>
-
             <div className="flex gap-4">
-                
-                    <NavigationMenu>
-                        <NavigationMenuList>
-                            <NavigationMenuItem>
-                                <Link href="/help" legacyBehavior passHref>
-                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Yardım
-                                    </NavigationMenuLink>
-                                </Link>
-                            </NavigationMenuItem>
-                            {!token ?
-                            <>
-                            <NavigationMenuItem>
-                                <Link href="/register" legacyBehavior passHref>
-                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Kayıt Ol
-                                    </NavigationMenuLink>
-                                </Link>
-                            </NavigationMenuItem>
-                            <NavigationMenuItem>
-                                <Link href="/login" legacyBehavior passHref>
-                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Giriş Yap
-                                    </NavigationMenuLink>
-                                </Link>
-                            </NavigationMenuItem>
-                            </>
-                            :
-                            <>
-                            <NavigationMenuItem>
-                                <Link href="/dashboard" legacyBehavior passHref>
-                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                        Dashboard
-                                    </NavigationMenuLink>
-                                </Link>
-                            </NavigationMenuItem>
-                            <NavigationMenuItem>
-                                <NavigationMenuLink asChild>
-                                    <button
-                                        onClick={() => {
-                                            logOff();
-                                            router.push('/');
-                                        }}
-                                        className={navigationMenuTriggerStyle()}
-                                    >
-                                        Çıkış Yap
-                                    </button>
+                <NavigationMenu>
+                    <NavigationMenuList>
+                        <NavigationMenuItem>
+                            <Link href="/help" legacyBehavior passHref>
+                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                    Yardım
                                 </NavigationMenuLink>
-                            </NavigationMenuItem>
+                            </Link>
+                        </NavigationMenuItem>
+                        {!token ?
+                        <>
+                        <NavigationMenuItem>
+                            <Link href="/register" legacyBehavior passHref>
+                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                    Kayıt Ol
+                                </NavigationMenuLink>
+                            </Link>
+                        </NavigationMenuItem>
+                        <NavigationMenuItem>
+                            <Link href="/login" legacyBehavior passHref>
+                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                    Giriş Yap
+                                </NavigationMenuLink>
+                            </Link>
+                        </NavigationMenuItem>
                             </>
-                            }
-                        </NavigationMenuList>
-                    </NavigationMenu>
-                
+                        :
+                        <> { isAdmin && isAdmin == 'true' ?
+                            <NavigationMenuItem>
+                            <Link href="/admin" legacyBehavior passHref>
+                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                    Admin Paneli
+                                </NavigationMenuLink>
+                            </Link>
+                            </NavigationMenuItem>
+                            : null
+                        }
+                        <NavigationMenuItem>
+                            <Link href="/dashboard" legacyBehavior passHref>
+                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                    Tatbikat
+                                </NavigationMenuLink>
+                            </Link>
+                        </NavigationMenuItem>
+                        <NavigationMenuItem>
+                            <NavigationMenuLink asChild>
+                                <button
+                                    onClick={() => {
+                                        logOff();
+                                        router.push('/');
+                                    }}
+                                    className={navigationMenuTriggerStyle()}
+                                >
+                                    Çıkış Yap
+                                </button>
+                            </NavigationMenuLink>
+                        </NavigationMenuItem>
+                        </>
+                        }
+                    </NavigationMenuList>
+                </NavigationMenu>
+            
                 <ModeToggle></ModeToggle>
             </div >
         </div >
