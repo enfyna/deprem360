@@ -136,6 +136,19 @@ function CombinedLoginForm() {
                     const expiresDate = new Date(result.expiresAt);
                     Cookies.set("jwt_token", result.token, { expires: expiresDate, secure: process.env.NODE_ENV === "production", sameSite: "Lax" });
                     Cookies.set("user_id", result.id, { expires: expiresDate, secure: process.env.NODE_ENV === "production", sameSite: "Lax" });
+                    
+                    const res2 = await api.get("/user");
+                    if (res2.status != 200) {
+                        throw new Error("Network response was not ok");
+                    }
+                    const data = await res2.data;
+
+                    Cookies.set("is_admin", data.isAdmin, { 
+                        expires: new Date(result.expiresAt),
+                        secure: process.env.NODE_ENV === "production",
+                        sameSite: "Lax",
+                    });
+                    
                     window.location.href = '/dashboard';
                 } else {
                     toast({
@@ -245,3 +258,4 @@ function CombinedLoginForm() {
 }
 // useEffect import'u eksik, ekleyelim
 import { useEffect } from "react";
+import api from "@/lib/axios";

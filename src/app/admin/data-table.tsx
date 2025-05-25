@@ -200,9 +200,8 @@ export const columns: ColumnDef<HelpFormAdmin>[] = [
                   console.log("Silme işlemi başlatılıyor:", helpForm.id);
                   const res = await api.delete(`/emergencyHelpForm?id=${helpForm.id}`);
                   console.log("Silme işlemi sonucu:", res);
-                 
-                  const event = new CustomEvent("helpFormDeleted", { detail: helpForm.id });
-                  window.dispatchEvent(event);
+                  
+                  //window.reload()
                 } catch (e) {
                   alert("Silme işlemi başarısız oldu.");
                 }
