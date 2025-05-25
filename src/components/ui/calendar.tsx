@@ -17,7 +17,6 @@ function Calendar({
 }: CalendarProps) {
   return (
     <DayPicker
-      animate
       className="p-2 bg-gray-300 dark:bg-gray-700 rounded-lg shadow-md"
       showOutsideDays={showOutsideDays}
       {...props}
