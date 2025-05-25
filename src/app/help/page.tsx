@@ -10,11 +10,22 @@ import Cookies from "js-cookie";
 import { locationStore, Location } from "@/app/AppStore";
 import * as turf from "@turf/turf";
 import { CheckCircle2, XCircle, AlertTriangle, PlusCircle, MapPin, MessageSquare, Send, Trash2, Edit3, Eye, Search, Filter as FilterIcon, ListChecks, Users, Building, ShieldCheck, Ambulance, FireExtinguisher, Wrench, Info } from 'lucide-react';
-import MapView, { CustomMarker } from '@/components/ui/MapView'; // Ensure this path is correct and import CustomMarker
+import MapView from '@/components/ui/MapView';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+
+// Define CustomMarker interface locally if import is problematic
+export interface CustomMarker {
+  position: [number, number]; // [latitude, longitude]  
+  key?: string;
+  title?: string;
+  iconUrl?: string;
+  iconSize?: [number, number];
+  popupContent?: React.ReactNode;
+  description?: string;
+}
 
 export enum EmergencyHelpFormCategory {
     UNDER_DEBRIS = 'Enkaz Altında',

@@ -63,6 +63,7 @@ export function Header() {
                             </>
                         :
                         <> { isAdmin && isAdmin == 'true' ?
+                             <>
                             <NavigationMenuItem>
                             <Link href="/admin" legacyBehavior passHref>
                                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
@@ -70,6 +71,15 @@ export function Header() {
                                 </NavigationMenuLink>
                             </Link>
                             </NavigationMenuItem>
+                            :
+                        <NavigationMenuItem>    
+                            <Link href="/announcement" legacyBehavior passHref>
+                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                    Duyurular
+                                </NavigationMenuLink>
+                            </Link>
+                            </NavigationMenuItem>
+                            </>
                             : null
                         }
                         <NavigationMenuItem>
