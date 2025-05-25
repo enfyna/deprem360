@@ -39,7 +39,24 @@ import {
 } from "@/components/ui/table"
 
 import api from "@/lib/axios"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { EmergencyHelpFormCategory } from "../help/page"
 
 export type HelpFormAdmin = {
   id: string
@@ -52,171 +69,195 @@ export type HelpFormAdmin = {
   managerApproval: boolean | null
   createdAt: string
   user: {
-    id: string
+    id: string // Kullanıcı ID'si genelde string veya number olur, backend'e göre ayarlayın
     name: string
     surname: string
   }
 }
 
-const dialogEdit = (helpForm: HelpFormAdmin) => {
-return (
- <Dialog open={true} onOpenChange={() => {}}>
-    <DialogTrigger asChild>
-      <Button variant="outline">Detay</Button>
-    </DialogTrigger>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Yardım Formu Detayı</DialogTitle>
-        <DialogDescription>
-          {helpForm.subject} - {helpForm.category}
-        </DialogDescription>
-      </DialogHeader>
-      <div className="space-y-4">
-        <p><strong>Konu:</strong> {helpForm.subject}</p>
-        <p><strong>İçerik:</strong> {helpForm.content}</p>
-        <p><strong>İl:</strong> {helpForm.provinceName}</p>
-        <p><strong>İlçe:</strong> {helpForm.districtName}</p>
-        <p><strong>AI Onayı:</strong> {helpForm.aiApproval ? "Onaylandı" : "Reddedildi"}</p>
-        <p><strong>Yönetici Onayı:</strong> {helpForm.managerApproval ? "Onaylandı" : "Reddedildi"}</p>
-        <p><strong>Tarih:</strong> {new Date(helpForm.createdAt).toLocaleString()}</p>
-        <p><strong>Kullanıcı:</strong> {helpForm.user.name} {helpForm.user.surname}</p>
-      </div>
-    </DialogContent>
-  </Dialog>
-)
+interface HelpFormEditDialogProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  helpForm: HelpFormAdmin;
+  onSaveChanges: (updatedData: HelpFormAdmin) => void;
 }
 
-export const columns: ColumnDef<HelpFormAdmin>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "category",
-    header: "Kategori",
-    cell: ({ row }) => <div>{row.getValue("category")}</div>,
-  },
-  {
-    accessorKey: "subject",
-    header: "Konu",
-    cell: ({ row }) => <div>{row.getValue("subject")}</div>,
-  },
-  {
-    accessorKey: "content",
-    header: "İçerik",
-    cell: ({ row }) => <div>{row.getValue("content")}</div>,
-  },
-  {
-    accessorKey: "provinceName",
-    header: "İl",
-    cell: ({ row }) => <div>{row.getValue("provinceName")}</div>,
-  },
-  {
-    accessorKey: "districtName",
-    header: "İlçe",
-    cell: ({ row }) => <div>{row.getValue("districtName")}</div>,
-  },
-  {
-    accessorKey: "aiApproval",
-    header: "AI Onayı",
-    cell: ({ row }) => {
-      const value = row.getValue("aiApproval");
-      if (value === true) return <span className="text-green-600">Onaylandı</span>;
-      if (value === false) return <span className="text-red-600">Reddedildi</span>;
-      return <span className="text-yellow-600">Bekliyor</span>;
-    },
-  },
-  {
-    accessorKey: "managerApproval",
-    header: "Yönetici Onayı",
-    cell: ({ row }) => {
-      const value = row.getValue("managerApproval");
-      if (value === true) return <span className="text-green-600">Onaylandı</span>;
-      if (value === false) return <span className="text-red-600">Reddedildi</span>;
-      return <span className="text-yellow-600">Bekliyor</span>;
-    },
-  },
-  {
-    accessorKey: "createdAt",
-    header: "Tarih",
-    cell: ({ row }) => <div>{new Date(row.getValue("createdAt")).toLocaleString()}</div>,
-  },
-  {
-    accessorKey: "user",
-    header: "Kullanıcı",
-    cell: ({ row }) => {
-      const user = row.getValue("user") as HelpFormAdmin["user"];
-      return <div>{user.name} {user.surname}</div>;
-    },
-  },
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const helpForm = row.original
-      return (
-        <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem
-            onClick={() => navigator.clipboard.writeText(helpForm.id)}
-          >
-            ID'yi Kopyala
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => dialogEdit(helpForm)}
-          >
-            Detay
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={async () => {
-              if (window.confirm("Bu satırı silmek istediğinize emin misiniz?")) {
-                try {
-                  console.log("Silme işlemi başlatılıyor:", helpForm.id);
-                  const res = await api.delete(`/emergencyHelpForm?id=${helpForm.id}`);
-                  console.log("Silme işlemi sonucu:", res);
-                  
-                  //window.reload()
-                } catch (e) {
-                  alert("Silme işlemi başarısız oldu.");
-                }
-              }
-            }}
-            className="text-red-600"
-          >
-            Sil
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      )
-    },
-  },
-]
+const HelpFormEditDialog: React.FC<HelpFormEditDialogProps> = ({
+  isOpen,
+  onOpenChange,
+  helpForm,
+  onSaveChanges,
+}) => {
+  const [editedData, setEditedData] = React.useState<HelpFormAdmin>({ ...helpForm });
+
+  React.useEffect(() => {
+    setEditedData({ ...helpForm });
+  }, [helpForm]);
+
+  const handleChange = (
+    field: keyof Omit<HelpFormAdmin, 'user' | 'createdAt' | 'id'> | `user.${keyof HelpFormAdmin['user']}`,
+    value: any
+  ) => {
+    setEditedData(prev => {
+      const prevCopy = { ...prev };
+      if (typeof field === 'string' && field.startsWith('user.')) {
+        const userField = field.split('.')[1] as keyof HelpFormAdmin['user'];
+        // Ensure user object exists
+        prevCopy.user = { ...prevCopy.user, [userField]: value };
+      } else if (field === "aiApproval" || field === "managerApproval") {
+        let processedValue: boolean | null;
+        if (value === "true") processedValue = true;
+        else if (value === "false") processedValue = false;
+        else processedValue = null;
+        (prevCopy as any)[field] = processedValue;
+      } else {
+        (prevCopy as any)[field] = value;
+      }
+      return prevCopy;
+    });
+  };
+
+  const handleSave = async () => {
+    try {
+      console.log("Kaydediliyor:", editedData);
+      const emergency = {
+        emergencyHelpForm: editedData
+      }
+      // GERÇEK API ÇAĞRISINI BURAYA EKLEYİN
+      // Örneğin: const response = await api.put(`/api/emergencyHelpForms/${editedData.id}`, editedData);
+      // response.data'nın güncellenmiş HelpFormAdmin nesnesini içerdiğini varsayıyoruz.
+      // Şimdilik sahte bir yanıt kullanalım:
+      // await new Promise(resolve => setTimeout(resolve, 1000)); // API gecikmesini simüle et
+      const response = await api.post(`/emergencyHelpForm`, emergency); // API endpoint'inizi ayarlayın
+
+      onSaveChanges(response.data); // Backend'den dönen güncel veri ile ana listeyi güncelle
+      onOpenChange(false); // Dialog'u kapat
+    } catch (error) {
+      console.error("Kaydetme hatası:", error);
+      alert("Güncelleme sırasında bir hata oluştu. Lütfen API endpoint'inizi ve metodunuzu kontrol edin.");
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Yardım Formu Düzenle</DialogTitle>
+          <DialogDescription>
+            ID: {editedData.id}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="category" className="text-right">Kategori</Label>
+            <Input
+              id="category"
+              value={editedData.category}
+              onChange={(e) => handleChange("category", e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="subject" className="text-right">Konu</Label>
+            <Input
+              id="subject"
+              value={editedData.subject}
+              onChange={(e) => handleChange("subject", e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="content" className="text-right">İçerik</Label>
+            <Textarea
+              id="content"
+              value={editedData.content}
+              onChange={(e) => handleChange("content", e.target.value)}
+              className="col-span-3"
+              rows={5}
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="provinceName" className="text-right">İl</Label>
+            <Input
+              id="provinceName"
+              value={editedData.provinceName}
+              onChange={(e) => handleChange("provinceName", e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="districtName" className="text-right">İlçe</Label>
+            <Input
+              id="districtName"
+              value={editedData.districtName}
+              onChange={(e) => handleChange("districtName", e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="userName" className="text-right">Kullanıcı Adı</Label>
+            <Input
+              id="userName"
+              value={editedData.user.name}
+              onChange={(e) => handleChange("user.name", e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="userSurname" className="text-right">Kullanıcı Soyadı</Label>
+            <Input
+              id="userSurname"
+              value={editedData.user.surname}
+              onChange={(e) => handleChange("user.surname", e.target.value)}
+              className="col-span-3"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="aiApproval" className="text-right">AI Onayı</Label>
+            <Select
+              value={editedData.aiApproval === null ? "null" : String(editedData.aiApproval)}
+              onValueChange={(value) => handleChange("aiApproval", value)}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Onaylandı</SelectItem>
+                <SelectItem value="false">Reddedildi</SelectItem>
+                <SelectItem value="null">Bekliyor</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="managerApproval" className="text-right">Yönetici Onayı</Label>
+            <Select
+              value={editedData.managerApproval === null ? "null" : String(editedData.managerApproval)}
+              onValueChange={(value) => handleChange("managerApproval", value)}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Onaylandı</SelectItem>
+                <SelectItem value="false">Reddedildi</SelectItem>
+                <SelectItem value="null">Bekliyor</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Oluşturma Tarihi</Label>
+            <p className="col-span-3">{new Date(editedData.createdAt).toLocaleString()}</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>İptal</Button>
+          <Button onClick={handleSave}>Kaydet</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 
 export function DataTableHelpForm() {
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -224,14 +265,175 @@ export function DataTableHelpForm() {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [data, setData] = React.useState<HelpFormAdmin[]>([])
-  const [loading, setLoading] = React.useState(false)
+  const [loading, setLoading] = React.useState(true) // Başlangıçta true
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
+  const [editingHelpForm, setEditingHelpForm] = React.useState<HelpFormAdmin | null>(null);
+
+  const fetchData = React.useCallback(() => {
+    setLoading(true);
+    api.get("/emergencyHelpForms") // API endpoint'inizi kontrol edin
+      .then(res => {
+        setData(res.data);
+      })
+      .catch(err => {
+        console.error("Veri çekme hatası:", err);
+        alert("Veriler yüklenirken bir hata oluştu.");
+        setData([]); // Hata durumunda veriyi boşalt
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   React.useEffect(() => {
-    setLoading(true)
-    api.get("/emergencyHelpForms")
-      .then(res => { setData(res.data)})
-      .finally(() => setLoading(false))
-  }, [])
+    fetchData();
+  }, [fetchData]);
+
+  const columns: ColumnDef<HelpFormAdmin>[] = React.useMemo(() => [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "category",
+      header: "Kategori",
+      cell: ({ row }) => <div>{row.getValue("category")}</div>,
+    },
+    {
+      accessorKey: "subject",
+      header: "Konu",
+      cell: ({ row }) => <div className="max-w-xs truncate">{row.getValue("subject")}</div>,
+    },
+    {
+      accessorKey: "content",
+      header: "İçerik",
+      cell: ({ row }) => <div className="max-w-xs truncate">{row.getValue("content")}</div>,
+    },
+    {
+      accessorKey: "provinceName",
+      header: "İl",
+      cell: ({ row }) => <div>{row.getValue("provinceName")}</div>,
+    },
+    {
+      accessorKey: "districtName",
+      header: "İlçe",
+      cell: ({ row }) => <div>{row.getValue("districtName")}</div>,
+    },
+    {
+      accessorKey: "aiApproval",
+      header: "AI Onayı",
+      cell: ({ row }) => {
+        const value = row.getValue("aiApproval");
+        if (value === true) return <span className="text-green-600 font-semibold">Onaylandı</span>;
+        if (value === false) return <span className="text-red-600 font-semibold">Reddedildi</span>;
+        return <span className="text-yellow-600 font-semibold">Bekliyor</span>;
+      },
+    },
+    {
+      accessorKey: "managerApproval",
+      header: "Yönetici Onayı",
+      cell: ({ row }) => {
+        const value = row.getValue("managerApproval");
+        if (value === true) return <span className="text-green-600 font-semibold">Onaylandı</span>;
+        if (value === false) return <span className="text-red-600 font-semibold">Reddedildi</span>;
+        return <span className="text-yellow-600 font-semibold">Bekliyor</span>;
+      },
+    },
+    {
+      accessorKey: "createdAt",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Tarih
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      ),
+      cell: ({ row }) => <div>{new Date(row.getValue("createdAt")).toLocaleString()}</div>,
+    },
+    {
+      accessorKey: "user",
+      header: "Kullanıcı",
+      cell: ({ row }) => {
+        const user = row.getValue("user") as HelpFormAdmin["user"];
+        return <div>{user.name} {user.surname}</div>;
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const helpForm = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Menüyü aç</span>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Eylemler</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => navigator.clipboard.writeText(helpForm.id)}
+              >
+                ID'yi Kopyala
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditingHelpForm(helpForm);
+                  setIsEditDialogOpen(true);
+                }}
+              >
+                Detay/Düzenle
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async () => {
+                  if (window.confirm("Bu satırı silmek istediğinize emin misiniz?")) {
+                    try {
+                      console.log("Silme işlemi başlatılıyor:", helpForm.id);
+                      // GERÇEK API ÇAĞRISINI BURAYA EKLEYİN
+                      await api.delete(`/emergencyHelpForm?id=${helpForm.id}`); // API endpoint'inizi ayarlayın
+                      console.log("Silme işlemi başarılı:", helpForm.id);
+                      // Sayfayı yenilemeden veriyi güncelle
+                      setData(currentData => currentData.filter(item => item.id !== helpForm.id));
+                    } catch (e) {
+                      console.error("Silme işlemi başarısız oldu:", e);
+                      alert("Silme işlemi başarısız oldu. Lütfen API endpoint'inizi kontrol edin.");
+                    }
+                  }
+                }}
+                className="text-red-600 hover:!text-red-700"
+              >
+                Sil
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      },
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [setData, setEditingHelpForm, setIsEditDialogOpen]);
+
 
   const table = useReactTable({
     data,
@@ -250,23 +452,41 @@ export function DataTableHelpForm() {
       columnVisibility,
       rowSelection,
     },
-  })
+    manualPagination: false, // API'den sayfalama yapmıyorsanız false
+    manualSorting: false,    // API'den sıralama yapmıyorsanız false
+    manualFiltering: false,  // API'den filtreleme yapmıyorsanız false
+    autoResetPageIndex: true, // veri değiştiğinde sayfayı sıfırla
+  });
+
+  const handleSaveChanges = (updatedData: HelpFormAdmin) => {
+    setData(currentData =>
+      currentData.map(item =>
+        item.id === updatedData.id ? updatedData : item
+      )
+    );
+    // İsteğe bağlı olarak, başarılı güncelleme mesajı gösterebilirsiniz.
+    // alert("Veri başarıyla güncellendi!");
+  };
 
   return (
     <div className="w-full">
       <div className="flex items-center py-4 gap-2">
         <Input
-          placeholder="Konu veya içerikte ara..."
+          placeholder="Konu, içerik veya kategoride ara..."
           value={(table.getColumn("subject")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
+          onChange={(event) => {
             table.getColumn("subject")?.setFilterValue(event.target.value)
-          }
+            // İsterseniz diğer kolonlarda da arama yapabilirsiniz:
+            // table.getColumn("content")?.setFilterValue(event.target.value)
+            // table.getColumn("category")?.setFilterValue(event.target.value)
+            // Veya global bir filtre kullanabilirsiniz (tanımlamanız gerekir)
+          }}
           className="max-w-sm"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Kolonlar <ChevronDown />
+              Kolonlar <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -283,29 +503,35 @@ export function DataTableHelpForm() {
                       column.toggleVisibility(!!value)
                     }
                   >
-                    {column.id}
+                    {/* Sütun başlıklarını daha kullanıcı dostu hale getirebilirsiniz */}
+                    {column.id === "provinceName" ? "İl" :
+                      column.id === "districtName" ? "İlçe" :
+                        column.id === "aiApproval" ? "AI Onayı" :
+                          column.id === "managerApproval" ? "Yönetici Onayı" :
+                            column.id === "createdAt" ? "Tarih" :
+                              column.id}
                   </DropdownMenuCheckboxItem>
                 )
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button
+        {/* Tüm Sütunları Sil butonu isteğe bağlı, eğer bir filtre sıfırlama vs. içinse ismi değiştirilebilir. */}
+        {/* <Button
           variant="destructive"
           className="ml-2"
           onClick={() => {
-            // Hide all columns except select and actions
             const allColumns = table.getAllColumns();
             const newVisibility: VisibilityState = {};
             allColumns.forEach(col => {
-              if (col.id !== "select" && col.id !== "actions") {
+              if (col.id !== "select" && col.id !== "actions" && col.getCanHide()) {
                 newVisibility[col.id] = false;
               }
             });
             setColumnVisibility(newVisibility);
           }}
         >
-          Tüm Sütunları Sil
-        </Button>
+          Sütunları Gizle
+        </Button> */}
       </div>
       <div className="rounded-md border">
         <Table>
@@ -318,9 +544,9 @@ export function DataTableHelpForm() {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}
@@ -367,6 +593,7 @@ export function DataTableHelpForm() {
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} /{" "}
           {table.getFilteredRowModel().rows.length} satır seçili.
+          Toplam {data.length} kayıt.
         </div>
         <div className="space-x-2">
           <Button
@@ -387,6 +614,15 @@ export function DataTableHelpForm() {
           </Button>
         </div>
       </div>
+      {editingHelpForm && (
+        <HelpFormEditDialog
+          key={editingHelpForm.id + (isEditDialogOpen ? "-open" : "-closed")} // Key'i dialog açılıp kapandığında veya veri değiştiğinde değiştirmek için
+          isOpen={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          helpForm={editingHelpForm}
+          onSaveChanges={handleSaveChanges}
+        />
+      )}
     </div>
   )
 }
