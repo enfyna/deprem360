@@ -231,7 +231,7 @@ export function EarthquakeTable({
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                  {earthquakes.map((event) => (
+                  {Array.isArray(earthquakes) && earthquakes.map((event) => (
                     <tr key={event.eventID} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{event.date}</td>
                       <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">{event.location}</td>

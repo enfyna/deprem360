@@ -11,6 +11,7 @@ import axios from 'axios';
 const MapView = dynamic(() => import('@/components/ui/MapView'), { ssr: false });
 
 import { Earth, Building, Layers, AlertTriangle } from "lucide-react";
+import api from "@/lib/axios";
 
 interface EarthquakeEvent {
   rms: string;
@@ -116,12 +117,21 @@ export default function Home() {
             let params: Record<string, string> = {};
             Object.entries(filtersToUse).forEach(([key, value]) => {
                 if (value !== undefined && value !== null && value !== '') {
-                    params[key] = String(value);
+                    if (key === 'start' || key === 'end') {
+                        // Format date as yyyy-mm-dd
+                        const date = new Date(value);
+                        const year = date.getFullYear();
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        const day = date.getDate().toString().padStart(2, '0');
+                        params[key] = `${year}-${month}-${day}`;
+                    } else {
+                        params[key] = String(value);
+                    }
                 }
             });
-            const response = await axios.get(
-                `https://engaging-solely-maggot.ngrok-free.app/earthquakes?${new URLSearchParams(params).toString()}`
-            );
+
+            console.log("Fetching earthquakes with params:", params);
+            const response = await api.get('/earthquakes', { params });
             setEarthquakes(response.data as EarthquakeEvent[]);
         } catch (err) {
             console.error("Error fetching earthquake data in page.tsx:", err);
