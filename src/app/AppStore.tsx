@@ -31,7 +31,6 @@ export interface Location {
         throw new Error("Network response was not ok");
       }
       const data = await response.data;
-      console.log('Fetched',response);
 
       runInAction(() => {
         this.locations = data as Location[]; // Assert data as Location[]

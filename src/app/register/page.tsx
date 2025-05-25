@@ -60,7 +60,6 @@ export default function RegisterPage() {
 function RegisterForm() {
     const router = useRouter();
     const locations = locationStore.locations;
-    console.log('Locations:', locations);
 
     const [isLoading, setIsLoading] = useState(false); // Added loading state
     const [selectedProvinceDistricts, setSelectedProvinceDistricts] = useState<Array<{ name: string }>>([]);
