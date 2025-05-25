@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ModeToggle } from "./theme-toggle";
 import Cookies from "js-cookie";
-import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, navigationMenuTriggerStyle } from "./navigation-menu";
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "./navigation-menu";
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
 import { useTheme } from "next-themes";
@@ -34,9 +34,35 @@ export function Header() {
                     className={isDarkMode ? "dark:invert" : ""}
                 />
             </Link>
-            <div className="flex gap-4">
+            <div className="flex gap-4 items-center">
                 <NavigationMenu>
                     <NavigationMenuList>
+                        { isAdmin && isAdmin == 'true' ?
+                            <NavigationMenuItem>
+                                <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
+                                <NavigationMenuContent>
+                                    <NavigationMenuLink className="p-4 m-4" asChild>
+                                        <>
+                                            <NavigationMenuItem>
+                                                <Link href="/admin" legacyBehavior passHref>
+                                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                                        Yardım Talepleri
+                                                    </NavigationMenuLink>
+                                                </Link>
+                                            </NavigationMenuItem>
+                                            <NavigationMenuItem>    
+                                                <Link href="/announcement" legacyBehavior passHref>
+                                                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                                                        Duyurular
+                                                    </NavigationMenuLink>
+                                                </Link>
+                                            </NavigationMenuItem>
+                                        </>
+                                    </NavigationMenuLink>
+                                </NavigationMenuContent>
+                            </NavigationMenuItem>
+                            : null
+                        }
                         <NavigationMenuItem>
                             <Link href="/help" legacyBehavior passHref>
                                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
@@ -62,26 +88,7 @@ export function Header() {
                         </NavigationMenuItem>
                             </>
                         :
-                        <> { isAdmin && isAdmin == 'true' ?
-                             <>
-                            <NavigationMenuItem>
-                            <Link href="/admin" legacyBehavior passHref>
-                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                    Admin Paneli
-                                </NavigationMenuLink>
-                            </Link>
-                            </NavigationMenuItem>
-                            :
-                        <NavigationMenuItem>    
-                            <Link href="/announcement" legacyBehavior passHref>
-                                <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                    Duyurular
-                                </NavigationMenuLink>
-                            </Link>
-                            </NavigationMenuItem>
-                            </>
-                            : null
-                        }
+                        <> 
                         <NavigationMenuItem>
                             <Link href="/dashboard" legacyBehavior passHref>
                                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>

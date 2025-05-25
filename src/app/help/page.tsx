@@ -521,9 +521,6 @@ export default function HelpPage() {
                 {selectedForm ? selectedForm.subject : "Yardım Talep Detayı"}
             </DialogTitle>
              <DialogClose asChild>
-                <Button variant="ghost" className="absolute top-4 right-4 rounded-full p-2 h-8 w-8 dark:text-gray-300 hover:bg-gray-700/50">
-                    X
-                </Button>
             </DialogClose>
           </DialogHeader>
           {submitting && !selectedForm && !error && (
@@ -680,7 +677,6 @@ export default function HelpPage() {
             <DialogHeader className="p-6 border-b dark:border-gray-700">
                 <DialogTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Yeni Yardım Talebi Oluştur</DialogTitle>
                 <DialogClose asChild>
-                    <Button variant="ghost" className="absolute top-4 right-4 rounded-full p-2 h-8 w-8 dark:text-gray-300 hover:bg-gray-700/50">X</Button>
                 </DialogClose>
             </DialogHeader>
             <ScrollArea className="max-h-[calc(100vh-200px)]">
