@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import Cookies from "js-cookie";
-import { locationStore } from "@/app/AppStore";
+import { locationStore, Location } from "@/app/AppStore";
+import * as turf from "@turf/turf";
+import { CheckCircle2, XCircle, AlertTriangle, PlusCircle, MapPin, MessageSquare, Send, Trash2, Edit3, Eye, Search, Filter as FilterIcon, ListChecks, Users, Building, ShieldCheck, Ambulance, FireExtinguisher, Wrench, Info } from 'lucide-react';
+import MapView, { CustomMarker } from '@/components/ui/MapView'; // Ensure this path is correct and import CustomMarker
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label"; // Added
-import { ScrollArea } from "@/components/ui/scroll-area"; // Added for modal comments
-import { CheckCircle2, XCircle, AlertTriangle, MapPin } from 'lucide-react'; // Added
-import MapView from "@/components/ui/MapView"; // Added
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 export enum EmergencyHelpFormCategory {
     UNDER_DEBRIS = 'Enkaz Altında',
@@ -74,38 +76,46 @@ const ApprovalIcon = ({ status }: { status: boolean | null }) => {
   }
 };
 
-// Define CustomMarker type for MapView props
-type CustomMarker = {
-  position: [number, number]; // [latitude, longitude]
-  title?: string;
-  description?: string;
-  key?: string;
-  icon?: any; // Could be L.Icon, but 'any' is simpler here if not deeply typed
-  popupContent?: React.ReactNode;
-};
-
-interface District {
-    name: string;
-}
-
-interface Location {
-    name: string; // İl adı
-    districts: District[];
-}
-
 const ALL_CATEGORIES_OPTION_VALUE = "__all_categories__";
 const ALL_PROVINCES_OPTION_VALUE = "__all_provinces__";
 const ALL_DISTRICTS_OPTION_VALUE = "__all_districts__";
 
+// Define structure for new help form data
+interface NewHelpFormData {
+  category: string;
+  subject: string;
+  content: string;
+  provinceName: string;
+  districtName: string;
+  point?: { // Point is optional
+    type: "Point";
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+}
+
 export default function HelpPage() {
   const [forms, setForms] = useState<HelpForm[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false); // For detail modal
+  const [addModalOpen, setAddModalOpen] = useState(false); // For new request modal
   const [selectedForm, setSelectedForm] = useState<HelpFormDetail | null>(null);
   const [comment, setComment] = useState("");
-  const [submitting, setSubmitting] = useState(false); // Used for modal operations (detail fetch, comment submit)
+  const [submitting, setSubmitting] = useState(false); 
   const [error, setError] = useState<string | null>(null);
-  const [loadingDetailOfId, setLoadingDetailOfId] = useState<string | null>(null); // Added for specific card loading state
+  const [addFormError, setAddFormError] = useState<string | null>(null); // Error state for add form modal
+  const [loadingDetailOfId, setLoadingDetailOfId] = useState<string | null>(null);
+
+  const [newFormData, setNewFormData] = useState<NewHelpFormData>({
+    category: "",
+    subject: "",
+    content: "",
+    provinceName: "",
+    districtName: "",
+    // point is initially undefined
+  });
+  const [selectedPoint, setSelectedPoint] = useState<[number, number] | null>(null); // [latitude, longitude]
+  const [addModalMapCenter, setAddModalMapCenter] = useState<[number, number]>([39.0, 35.0]); // Default center (Turkey)
+  const [addModalMapZoom, setAddModalMapZoom] = useState<number>(6); // Default zoom
 
   const categoryOptions = Object.values(EmergencyHelpFormCategory);
 
@@ -114,9 +124,7 @@ export default function HelpPage() {
   const [districtFilter, setDistrictFilter] = useState<string>("");
 
   // @ts-ignore
-  const locations: Location[] = useMemo(() => Array.isArray(locationStore.locations)
-  ? locationStore.locations.map((loc: any) => ({ ...loc }))
-  : [], [locationStore.locations]);
+  const locations = locationStore.locations as Location[]; // Use the imported Location type
 
   const provinces = useMemo(() => locations.map(loc => loc.name), [locations]);
 
@@ -132,6 +140,7 @@ export default function HelpPage() {
   }, [provinceFilter]);
 
   const isLoggedIn = !!Cookies.get("jwt_token");
+  const userId = Cookies.get("user_id"); // Assuming user_id is stored in cookies
 
   const fetchForms = async () => {
     setLoading(true);
@@ -192,7 +201,7 @@ export default function HelpPage() {
   const handleCommentSubmit = async () => {
     if (!comment.trim() || !selectedForm) return;
     setSubmitting(true);
-    setError(null);
+    setError(null); // Clear main error, use addFormError for modal
     try {
       await api.post("/emergencyHelpForm", {
         emergencyHelpForm: {
@@ -210,9 +219,153 @@ export default function HelpPage() {
     setSubmitting(false);
   };
 
+  // Effect to update map center in "Add New Help Request" modal when province changes or modal opens
+  useEffect(() => {
+    if (addModalOpen) {
+      let newCenter: [number, number] = [39.0, 35.0]; // Default: Turkey center [lat, lon]
+      let newZoom = 6; // Default zoom for Turkey general view
+
+      if (newFormData.provinceName) {
+        const selectedProvinceData = locations.find(p => p.name === newFormData.provinceName);
+        if (selectedProvinceData && selectedProvinceData.geometry) {
+          try {
+            const centroid = turf.centroid(selectedProvinceData.geometry);
+            if (centroid && centroid.geometry && centroid.geometry.coordinates) {
+              const [lon, lat] = centroid.geometry.coordinates as [number, number];
+              newCenter = [lat, lon]; // Correct order [latitude, longitude] for MapView
+              newZoom = 9; // Zoom in more when a province is selected
+            } else {
+              console.warn(`Centroid calculation failed for province: ${newFormData.provinceName}. Using default map center.`);
+            }
+          } catch (e) {
+            console.error(`Error calculating centroid for province ${newFormData.provinceName}:`, e);
+          }
+        } else {
+          console.warn(`No geometry found for province: ${newFormData.provinceName}. Using default map center.`);
+        }
+      }
+      // If newFormData.provinceName is empty, it will use the default newCenter [39.0, 35.0] and newZoom 6.
+
+      setAddModalMapCenter(newCenter);
+      setAddModalMapZoom(newZoom);
+    } else {
+      // Reset when modal is closed
+      setSelectedPoint(null);
+      setAddModalMapCenter([39.0, 35.0]); // Reset to default Turkey center [lat, lon]
+      setAddModalMapZoom(6); // Reset to default zoom
+    }
+  }, [addModalOpen, newFormData.provinceName, locations]);
+
+  const handleMapClick = (latlng: { lat: number; lng: number }) => {
+    const newPoint: [number, number] = [latlng.lat, latlng.lng];
+    setSelectedPoint(newPoint);
+    setNewFormData(prev => ({
+      ...prev,
+      point: {
+        type: "Point",
+        coordinates: [latlng.lng, latlng.lat] // API expects [longitude, latitude]
+      }
+    }));
+    // Do not recenter the map here; keep the user's current view
+    // console.log('Map clicked. Current center:', addModalMapCenter, 'Zoom:', addModalMapZoom); // For debugging if reset persists
+  };
+
+  const handleAddFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setNewFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    if (name === "provinceName") {
+      setNewFormData(prev => ({ ...prev, districtName: "" })); // Reset district on province change
+    }
+  };
+
+  const handleAddFormCategoryChange = (value: string) => {
+    setNewFormData(prev => ({
+        ...prev,
+        category: value === ALL_CATEGORIES_OPTION_VALUE ? "" : value
+    }));
+  };
+
+  const handleAddFormProvinceChange = (value: string) => {
+    setNewFormData(prev => ({
+        ...prev,
+        provinceName: value === ALL_PROVINCES_OPTION_VALUE ? "" : value,
+        districtName: "" // Reset district
+    }));
+  };
+
+  const handleAddFormDistrictChange = (value: string) => {
+    setNewFormData(prev => ({
+        ...prev,
+        districtName: value === ALL_DISTRICTS_OPTION_VALUE ? "" : value
+    }));
+  };
+
+  const handleAddHelpRequest = async () => {
+    if (!userId) {
+        setAddFormError("Kullanıcı ID bulunamadı. Lütfen tekrar giriş yapın.");
+        return;
+    }
+    if (!newFormData.category || !newFormData.subject || !newFormData.content || !newFormData.provinceName) {
+        setAddFormError("Lütfen tüm zorunlu alanları doldurun (Kategori, Konu, İçerik, İl).");
+        return;
+    }
+
+    setSubmitting(true);
+    setAddFormError(null);
+
+    const payload: any = {
+        emergencyHelpForm: {
+            ...newFormData,
+            user: { id: userId },
+        }
+    };
+
+    if (payload.emergencyHelpForm.point === undefined) {
+        // If point is not selected, we do not include it in the payload
+        payload.emergencyHelpForm.point = turf.centroid(locations.find(loc => loc.name === payload.emergencyHelpForm.provinceName)?.geometry || null).geometry; // Use centroid of province geometry if available
+
+    }
+
+    try {
+        await api.post("/emergencyHelpForm", payload);
+        setAddModalOpen(false);
+        fetchForms(); // Refresh the list
+        setNewFormData({ category: "", subject: "", content: "", provinceName: "", districtName: "" }); // Reset form
+        setSelectedPoint(null);
+    } catch (err: any) { 
+        console.error("Error submitting new help form:", err);
+        setAddFormError(err.response?.data?.message || "Yardım talebi gönderilemedi. Lütfen tekrar deneyin.");
+    } finally {
+        setSubmitting(false);
+    }
+  };
+
+  const newFormDistricts = useMemo(() => {
+    if (!newFormData.provinceName) return [];
+    const province = locations.find(loc => loc.name === newFormData.provinceName);
+    if (!province || !Array.isArray(province.districts)) return [];
+    return province.districts.map(d => d.name);
+  }, [newFormData.provinceName, locations]);
+
+  const addMapMarkers: CustomMarker[] = selectedPoint 
+    ? [{ position: selectedPoint, key: 'selected_point', title: "Seçilen Nokta" }]
+    : [];
+
   return (
     <div className="container mx-auto py-8 px-4 w-full min-h-screen">
       <h1 className="text-3xl font-bold mb-8 mt-4 text-center text-gray-800 dark:text-gray-100">Yardım Talepleri</h1>
+
+      {isLoggedIn && (
+        <div className="w-full max-w-2xl mx-auto mb-6 flex justify-end">
+            <Button onClick={() => setAddModalOpen(true)} className="bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white">
+                <PlusCircle className="h-5 w-5 mr-2" />
+                Yardım Talebi Ekle
+            </Button>
+        </div>
+      )}
 
       <Card className="w-full max-w-2xl mx-auto mb-8 shadow-md dark:bg-gray-800">
         <CardHeader>
@@ -435,7 +588,7 @@ export default function HelpPage() {
                                     ],
                                     title: selectedForm.subject,
                                     description: selectedForm.content,
-                                } as CustomMarker // Type assertion here
+                                } as never // Type assertion here
                             ]}
                             center={[
                                 selectedForm.point.coordinates[1], // latitude
@@ -443,6 +596,7 @@ export default function HelpPage() {
                             ]}
                             zoom={14}
                             style={{ height: '250px', width: '100%', borderRadius: '8px', marginTop: '4px' }}
+                            onMapClick={() => {}} // No-op handler for required prop
                         />
                     ) : (
                         <p className="text-sm text-gray-500 dark:text-gray-400">Konum bilgisi harita için uygun değil veya bulunamadı.</p>
@@ -499,6 +653,114 @@ export default function HelpPage() {
             </div>
             </ScrollArea>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Help Request Modal */}
+      <Dialog open={addModalOpen} onOpenChange={(isOpen: boolean) => { 
+          setAddModalOpen(isOpen); 
+          if (!isOpen) { 
+              setAddFormError(null); 
+              setNewFormData({ category: "", subject: "", content: "", provinceName: "", districtName: "" });
+              setSelectedPoint(null);
+            }
+        }}>
+        <DialogContent className="max-w-xl md:max-w-2xl lg:max-w-3xl p-0 dark:bg-gray-800">
+            <DialogHeader className="p-6 border-b dark:border-gray-700">
+                <DialogTitle className="text-2xl font-bold text-gray-800 dark:text-gray-100">Yeni Yardım Talebi Oluştur</DialogTitle>
+                <DialogClose asChild>
+                    <Button variant="ghost" className="absolute top-4 right-4 rounded-full p-2 h-8 w-8 dark:text-gray-300 hover:bg-gray-700/50">X</Button>
+                </DialogClose>
+            </DialogHeader>
+            <ScrollArea className="max-h-[calc(100vh-200px)]">
+                <div className="p-6 space-y-4">
+                    <div>
+                        <Label htmlFor="new-category" className="text-sm font-medium">Kategori *</Label>
+                        <Select 
+                            value={newFormData.category || ALL_CATEGORIES_OPTION_VALUE}
+                            onValueChange={handleAddFormCategoryChange}
+                        >
+                            <SelectTrigger id="new-category" className="w-full mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                                <SelectValue placeholder="Kategori Seçin" />
+                            </SelectTrigger>
+                            <SelectContent className="dark:bg-gray-800 dark:text-white">
+                                <SelectItem value={ALL_CATEGORIES_OPTION_VALUE} disabled>Kategori Seçin</SelectItem>
+                                {categoryOptions.map(cat => (
+                                    <SelectItem key={`new-${cat}`} value={cat}>{cat}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label htmlFor="new-subject" className="text-sm font-medium">Konu *</Label>
+                        <Input id="new-subject" name="subject" value={newFormData.subject} onChange={handleAddFormChange} placeholder="Örn: Enkaz altında kalanlar var" className="mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+                    </div>
+                    <div>
+                        <Label htmlFor="new-content" className="text-sm font-medium">İçerik / Adres Bilgisi *</Label>
+                        <Textarea id="new-content" name="content" value={newFormData.content} onChange={handleAddFormChange} placeholder="Detaylı adres ve durum bilgisi..." className="mt-1 min-h-[100px] dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="new-province" className="text-sm font-medium">İl *</Label>
+                            <Select 
+                                value={newFormData.provinceName || ALL_PROVINCES_OPTION_VALUE}
+                                onValueChange={handleAddFormProvinceChange}
+                            >
+                                <SelectTrigger id="new-province" className="w-full mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                                    <SelectValue placeholder="İl Seçin" />
+                                </SelectTrigger>
+                                <SelectContent className="dark:bg-gray-800 dark:text-white">
+                                     <SelectItem value={ALL_PROVINCES_OPTION_VALUE} disabled>İl Seçin</SelectItem>
+                                    {provinces.map(prov => (
+                                        <SelectItem key={`new-prov-${prov}`} value={prov}>{prov}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label htmlFor="new-district" className="text-sm font-medium">İlçe</Label>
+                            <Select 
+                                value={newFormData.districtName || ALL_DISTRICTS_OPTION_VALUE}
+                                onValueChange={handleAddFormDistrictChange} 
+                                disabled={!newFormData.provinceName}
+                            >
+                                <SelectTrigger id="new-district" className="w-full mt-1 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+                                    <SelectValue placeholder="İlçe Seçin" />
+                                </SelectTrigger>
+                                <SelectContent className="dark:bg-gray-800 dark:text-white">
+                                    <SelectItem value={ALL_DISTRICTS_OPTION_VALUE} disabled>İlçe Seçin</SelectItem>
+                                    {newFormDistricts.map(dist => (
+                                        <SelectItem key={`new-dist-${dist}`} value={dist}>{dist}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div>
+                        <Label htmlFor="map-select" className="text-sm font-medium">Konum Seç (Haritadan)</Label>
+                        <p className="text-xs text-muted-foreground mb-1">Haritaya tıklayarak kesin konumu belirtebilirsiniz. İl ve ilçe seçimi yapıldıysa harita o bölgeye odaklanmaya çalışacaktır.</p>
+                        <MapView 
+                                key={addModalMapCenter ? `${addModalMapCenter.join('-')}-${addModalMapZoom}` : 'add-map'} // More robust key
+                                customMarkers={addMapMarkers as never} // Use the explicitly typed variable
+                                center={addModalMapCenter || undefined} 
+                                zoom={addModalMapZoom}
+                                onMapClick={handleMapClick}
+                                style={{ height: '300px', width: '100%' }}
+                            />
+                        {selectedPoint && <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">Seçilen Koordinatlar: {selectedPoint[0].toFixed(5)}, {selectedPoint[1].toFixed(5)}</p>}
+                    </div>
+
+                    {addFormError && (
+                        <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-md">
+                            <p className="text-red-600 dark:text-red-400 text-sm">{addFormError}</p>
+                        </div>
+                    )}
+
+                    <Button onClick={handleAddHelpRequest} disabled={submitting} className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white">
+                        {submitting ? "Gönderiliyor..." : "Yardım Talebini Gönder"}
+                    </Button>
+                </div>
+            </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

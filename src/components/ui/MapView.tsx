@@ -1,10 +1,49 @@
 'use client';
 
+import React from 'react';
 import { MapContainer, TileLayer, WMSTileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import L, { LatLngExpression, Icon as LeafletIcon, PointTuple, Map } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
-// Default Leaflet icon for custom markers
+// Define interfaces for props
+interface LayerInfo {
+  url: string;
+  layers: string;
+}
+
+interface EarthquakeEvent {
+  eventID?: string;
+  latitude: string | number;
+  longitude: string | number;
+  location?: string;
+  magnitude?: string | number;
+  depth?: string | number;
+  date?: string;
+  type?: string;
+}
+
+// Define CustomMarker interface for use in this component and for export
+export interface CustomMarker {
+  position: [number, number]; // [latitude, longitude]  
+  key?: string;
+  title?: string;
+  iconUrl?: string;
+  iconSize?: [number, number];
+  popupContent?: React.ReactNode;
+  description?: string;
+}
+
+interface MapViewProps {
+  layersInfo?: LayerInfo[];
+  earthquakeEvents?: EarthquakeEvent[];
+  customMarkers?: CustomMarker[];
+  center?: [number, number]; // [latitude, longitude]
+  zoom?: number;
+  style?: React.CSSProperties;
+  onMapClick?: (latlng: L.LatLng) => void;
+}
+
+// Default Leaflet icon
 const defaultIcon = new L.Icon({
     iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
     iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
@@ -15,50 +54,37 @@ const defaultIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-// Custom icon for earthquake markers
+// Custom icon for earthquake markers (example)
 const earthquakeIcon = new L.Icon({
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png', // Example: can be different
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
     iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
-    shadowSize: [41, 41],
-    // You could add a class here to style it differently via CSS e.g. className: 'earthquake-marker-icon'
+    shadowSize: [41, 41]
 });
 
-/**
- * @typedef {Object} CustomMarkerJS // Renamed to avoid potential conflicts
- * @property {[number, number]} position - [latitude, longitude]
- * @property {string} [key] - Optional unique key for the marker
- * @property {string} [title] - Optional title for the marker
- * @property {string} [iconUrl] - Optional URL for a custom marker icon image
- * @property {[number, number]} [iconSize] - Optional size for the custom icon image e.g., [32, 32]
- * @property {React.ReactNode} [popupContent] - Optional content for the marker's popup
- * @property {string} [description] - Optional description for the marker
- */
-
-export default function MapView({
-    layersInfo = [], 
-    earthquakeEvents = [], 
-    /** @type {Array<CustomMarkerJS>} */ // Explicitly type customMarkers using the JSDoc typedef
-    customMarkers = [], 
-    center = [39.0, 35.0], 
-    zoom = 6, 
+const MapView: React.FC<MapViewProps> = ({
+    layersInfo = [],
+    earthquakeEvents = [],
+    customMarkers = [],
+    center = [39.0, 35.0], // Default center: Turkey
+    zoom = 6,
     style,
-    onMapClick 
-}) {
+    onMapClick
+}) => {
     const wmsKey = layersInfo.map(l => `${l.url}_${l.layers}`).join(',');
     const earthquakesKey = earthquakeEvents.length > 0 ? `earthquakes-${earthquakeEvents.length}-${earthquakeEvents[0]?.eventID || 'id'}` : 'no-earthquakes';
-    const customMarkersKey = customMarkers.length > 0 ? `custom-${customMarkers.length}-${customMarkers[0]?.position?.join('')}` : 'no-custom-markers';
-    const mapKey = `${wmsKey}_${earthquakesKey}_${customMarkersKey}_${center.join('')}_${zoom}`;
+    const customMarkersKeyPart = customMarkers.map((m, i) => `${m.key || i}-${m.position?.join('_')}`).join(',');
+    const customMarkersKey = customMarkers.length > 0 ? `custom-${customMarkers.length}-${customMarkersKeyPart}` : 'no-custom-markers';
+    const mapKey = `${wmsKey}_${earthquakesKey}_${customMarkersKey}_${center.join('_')}_${zoom}`;
 
-    // Map click handler component
     const MapClickHandler = () => {
         useMapEvents({
             click: (e) => {
                 if (onMapClick) {
-                    onMapClick(e.latlng); // Pass LatLng object to the callback
+                    onMapClick(e.latlng);
                 }
             },
         });
@@ -78,7 +104,7 @@ export default function MapView({
                     attribution='&copy; OpenStreetMap contributors'
                     url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                 />
-                <MapClickHandler /> {/* Add the click handler component to the map */}
+                <MapClickHandler />
                 {layersInfo.map((layer, idx) => (
                     <WMSTileLayer
                         key={`${layer.url}_${layer.layers}_${idx}`}
@@ -92,10 +118,10 @@ export default function MapView({
                 ))}
 
                 {earthquakeEvents.map(event => (
-                    <Marker 
+                    <Marker
                         key={event.eventID || `eq-${event.latitude}-${event.longitude}`}
-                        position={[parseFloat(event.latitude), parseFloat(event.longitude)]}
-                        icon={earthquakeIcon} 
+                        position={[parseFloat(String(event.latitude)), parseFloat(String(event.longitude))]}
+                        icon={earthquakeIcon}
                     >
                         <Popup>
                             <b>Lokasyon:</b> {event.location}<br />
@@ -107,27 +133,25 @@ export default function MapView({
                     </Marker>
                 ))}
 
-                {/* Render custom markers */}
                 {customMarkers.map((marker, idx) => {
                     let iconToUse = defaultIcon;
                     if (marker.iconUrl) {
                         iconToUse = new L.Icon({
                             iconUrl: marker.iconUrl,
-                            iconSize: marker.iconSize || [25, 41], // Default size if not provided
-                            iconAnchor: marker.iconSize ? [marker.iconSize[0] / 2, marker.iconSize[1]] : [12, 41], // Adjust anchor based on size
+                            iconSize: marker.iconSize || [25, 41],
+                            iconAnchor: marker.iconSize ? [marker.iconSize[0] / 2, marker.iconSize[1]] : [12, 41],
                             popupAnchor: [1, -34],
-                            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png', // Optional: add shadow if needed
+                            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
                             shadowSize: [41, 41]
                         });
                     }
-
                     return (
                         <Marker
                             key={marker.key || marker.title || `custom-${idx}`}
-                            position={marker.position} // Expects [lat, lon]
-                            icon={iconToUse} // Use the determined icon
+                            position={marker.position}
+                            icon={iconToUse}
                         >
-                            {(marker.popupContent || marker.title || marker.description) && ( // Display popup if content, title or description exists
+                            {(marker.popupContent || marker.title || marker.description) && (
                                 <Popup>
                                     {marker.title && <h4>{marker.title}</h4>}
                                     {marker.description && <p>{marker.description}</p>}
@@ -140,4 +164,6 @@ export default function MapView({
             </MapContainer>
         </div>
     );
-}
+};
+
+export default MapView;
