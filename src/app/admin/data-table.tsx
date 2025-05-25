@@ -56,7 +56,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { EmergencyHelpFormCategory } from "../help/page"
+import { EmergencyHelpFormCategory } from "../help/page";
+import { locationStore } from "../AppStore"; // Added import
 
 export type HelpFormAdmin = {
   id: string
@@ -94,24 +95,49 @@ const HelpFormEditDialog: React.FC<HelpFormEditDialogProps> = ({
     setEditedData({ ...helpForm });
   }, [helpForm]);
 
+  const uniqueProvinces = React.useMemo(() => {
+    // Ensure locationStore.locations is defined and an array before mapping
+    if (!locationStore.locations || !Array.isArray(locationStore.locations)) {
+      return [];
+    }
+    const provinces = locationStore.locations.map(location => location.name);
+    return [...new Set(provinces)];
+  }, [locationStore.locations]);
+
+  const districtsForSelectedProvince = React.useMemo(() => {
+    if (!editedData.provinceName || !locationStore.locations || !Array.isArray(locationStore.locations)) return [];
+    const selectedLocation = locationStore.locations.find(location => location.name === editedData.provinceName);
+    return selectedLocation ? selectedLocation.districts.map(d => d.name) : [];
+  }, [editedData.provinceName, locationStore.locations]);
+
   const handleChange = (
     field: keyof Omit<HelpFormAdmin, 'user' | 'createdAt' | 'id'> | `user.${keyof HelpFormAdmin['user']}`,
-    value: any
+    value: string // All direct callers (Inputs, Selects) provide string
   ) => {
     setEditedData(prev => {
       const prevCopy = { ...prev };
+      let processedValue: string | boolean | null = value;
+
+      if (field === "category" || field === "provinceName" || field === "districtName") {
+        if (value === "__all__") {
+          processedValue = "";
+        }
+      }
+
       if (typeof field === 'string' && field.startsWith('user.')) {
         const userField = field.split('.')[1] as keyof HelpFormAdmin['user'];
-        // Ensure user object exists
-        prevCopy.user = { ...prevCopy.user, [userField]: value };
+        prevCopy.user = { ...(prevCopy.user || { id: '', name: '', surname: '' }), [userField]: processedValue as string };
       } else if (field === "aiApproval" || field === "managerApproval") {
-        let processedValue: boolean | null;
         if (value === "true") processedValue = true;
         else if (value === "false") processedValue = false;
         else processedValue = null;
         (prevCopy as any)[field] = processedValue;
       } else {
-        (prevCopy as any)[field] = value;
+        (prevCopy as any)[field] = processedValue;
+      }
+
+      if (field === "provinceName") {
+        prevCopy.districtName = ""; // Reset district when province changes
       }
       return prevCopy;
     });
@@ -150,12 +176,20 @@ const HelpFormEditDialog: React.FC<HelpFormEditDialogProps> = ({
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">Kategori</Label>
-            <Input
-              id="category"
-              value={editedData.category}
-              onChange={(e) => handleChange("category", e.target.value)}
-              className="col-span-3"
-            />
+            <Select
+              value={editedData.category || "__all__"}
+              onValueChange={(selectedValue: string) => handleChange("category", selectedValue)}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Kategori seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tümü</SelectItem>
+                {Object.values(EmergencyHelpFormCategory).map(cat => (
+                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="subject" className="text-right">Konu</Label>
@@ -178,21 +212,38 @@ const HelpFormEditDialog: React.FC<HelpFormEditDialogProps> = ({
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="provinceName" className="text-right">İl</Label>
-            <Input
-              id="provinceName"
-              value={editedData.provinceName}
-              onChange={(e) => handleChange("provinceName", e.target.value)}
-              className="col-span-3"
-            />
+            <Select
+              value={editedData.provinceName || "__all__"}
+              onValueChange={(selectedValue: string) => handleChange("provinceName", selectedValue)}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="İl seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tümü</SelectItem>
+                {uniqueProvinces.map(province => (
+                  <SelectItem key={province} value={province}>{province}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="districtName" className="text-right">İlçe</Label>
-            <Input
-              id="districtName"
-              value={editedData.districtName}
-              onChange={(e) => handleChange("districtName", e.target.value)}
-              className="col-span-3"
-            />
+            <Select
+              value={editedData.districtName || "__all__"}
+              onValueChange={(selectedValue: string) => handleChange("districtName", selectedValue)}
+              disabled={!editedData.provinceName || districtsForSelectedProvince.length === 0}
+            >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="İlçe seçiniz" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tümü</SelectItem>
+                {districtsForSelectedProvince.map(district => (
+                  <SelectItem key={district} value={district}>{district}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="userName" className="text-right">Kullanıcı Adı</Label>
@@ -216,7 +267,7 @@ const HelpFormEditDialog: React.FC<HelpFormEditDialogProps> = ({
             <Label htmlFor="aiApproval" className="text-right">AI Onayı</Label>
             <Select
               value={editedData.aiApproval === null ? "null" : String(editedData.aiApproval)}
-              onValueChange={(value) => handleChange("aiApproval", value)}
+              onValueChange={(value: string) => handleChange("aiApproval", value)}
             >
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Seçiniz" />
@@ -232,7 +283,7 @@ const HelpFormEditDialog: React.FC<HelpFormEditDialogProps> = ({
             <Label htmlFor="managerApproval" className="text-right">Yönetici Onayı</Label>
             <Select
               value={editedData.managerApproval === null ? "null" : String(editedData.managerApproval)}
-              onValueChange={(value) => handleChange("managerApproval", value)}
+              onValueChange={(value: string) => handleChange("managerApproval", value)}
             >
               <SelectTrigger className="col-span-3">
                 <SelectValue placeholder="Seçiniz" />
@@ -297,14 +348,14 @@ export function DataTableHelpForm() {
             table.getIsAllPageRowsSelected() ||
             (table.getIsSomePageRowsSelected() && "indeterminate")
           }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          onCheckedChange={(value: boolean | 'indeterminate') => table.toggleAllPageRowsSelected(value === true)}
           aria-label="Select all"
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          onCheckedChange={(value: boolean | 'indeterminate') => row.toggleSelected(value === true)}
           aria-label="Select row"
         />
       ),
@@ -499,8 +550,8 @@ export function DataTableHelpForm() {
                     key={column.id}
                     className="capitalize"
                     checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
+                    onCheckedChange={(value: boolean) =>
+                      column.toggleVisibility(value)
                     }
                   >
                     {/* Sütun başlıklarını daha kullanıcı dostu hale getirebilirsiniz */}

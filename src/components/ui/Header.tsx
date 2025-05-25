@@ -40,7 +40,7 @@ export function Header() {
                         <NavigationMenuItem>
                             <Link href="/help" legacyBehavior passHref>
                                 <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                                    Yardım
+                                    Yardım Talepleri
                                 </NavigationMenuLink>
                             </Link>
                         </NavigationMenuItem>
