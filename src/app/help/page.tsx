@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { EmergencyHelpFormCategory } from "@/constants/EmergencyHelpFormCategory";
 
 // Define CustomMarker interface locally if import is problematic
 export interface CustomMarker {
@@ -27,17 +28,6 @@ export interface CustomMarker {
   description?: string;
 }
 
-export enum EmergencyHelpFormCategory {
-    UNDER_DEBRIS = 'Enkaz Altında',
-    DEBRIS_REMOVAL = 'Enkaz Kaldırma',
-    SEARCH_AND_RESCUE = 'Arama Kurtarma',
-    MEDICAL = 'Tıbbi',
-    FOOD = 'Gıda',
-    SHELTER = 'Barınma',
-    FIRST_AID = 'Acil Yardım',
-    CLOTHING = 'Giyim',
-    OTHER = 'Diğer'
-}
 
 type Comment = {
   id: string;

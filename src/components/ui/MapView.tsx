@@ -112,7 +112,7 @@ const MapView: React.FC<MapViewProps> = ({
                         layers={layer.layers}
                         format="image/png"
                         transparent={true}
-                        tiled={true}
+                        /* tiled={true} */
                         version="1.1.1"
                     />
                 ))}
@@ -138,6 +138,7 @@ const MapView: React.FC<MapViewProps> = ({
                     if (marker.iconUrl) {
                         iconToUse = new L.Icon({
                             iconUrl: marker.iconUrl,
+                            iconRetinaUrl: marker.iconUrl.replace('.png', '@2x.png'),
                             iconSize: marker.iconSize || [25, 41],
                             iconAnchor: marker.iconSize ? [marker.iconSize[0] / 2, marker.iconSize[1]] : [12, 41],
                             popupAnchor: [1, -34],
