@@ -5,72 +5,65 @@ import { ChartConfig, ChartContainer } from "@/components/ui/chart";
 import Cookies from "js-cookie";
 import { Button } from "@/components/ui/button";
 import api from '@/lib/axios';
-
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Play, Square, Activity, CalendarDays } from "lucide-react"; // İkonlar için
 
 const initialChartData: { eksen_x: string; Sure: number }[] = [];
-
 
 const chartConfig = {
   Sure: {
     label: "Süre (saniye)",
-    color: "#2563eb",
+    color: "hsl(var(--chart-1))", // shadcn/ui tema rengi
   },
 } satisfies ChartConfig;
 
 function ChartSection({ chartData }: { chartData: typeof initialChartData }) {
   const isEmpty = chartData.length === 0;
   return (
-    <div className="flex flex-col items-start w-full">
-      <ChartContainer
-        config={chartConfig}
-        className="min-h-[300px] w-full max-w-[600px] bg-white dark:bg-gray-900 rounded-lg shadow flex items-center justify-center"
-      >
-        {isEmpty ? (
-          <div className="w-full h-[300px] flex flex-col items-center justify-center opacity-60">
-            <span className="text-lg text-gray-400 dark:text-gray-500">Henüz kayıtlı tatbikat yok</span>
-            <span className="text-5xl mt-2">📊</span>
-          </div>
-        ) : (
-          <BarChart data={chartData} width={550} height={450}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" strokeOpacity={0.5} />
-            <XAxis
-              dataKey="eksen_x"
-              stroke="#374151"
-              tick={{ fill: "var(--tw-text-opacity,1) #374151" }}
-              tickLine={{ stroke: "#374151" }}
-              axisLine={{ stroke: "#374151" }}
-              interval={0}
-            />
-            <YAxis
-              stroke="#374151"
-              tick={{ fill: "var(--tw-text-opacity,1) #374151" }}
-              tickLine={{ stroke: "#374151" }}
-              axisLine={{ stroke: "#374151" }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "var(--tw-bg-opacity,1) #fff",
-                color: "#111",
-                borderRadius: "0.5rem",
-                border: "1px solid #e5e7eb",
-              }}
-              wrapperStyle={{
-                color: "#111",
-              }}
-              labelStyle={{
-                color: "#f00",
-                fontWeight: 600,
-              }}
-              itemStyle={{
-                color: "#f00",
-              }}
-              cursor={{ fill: "#e5e7eb", opacity: 0.2 }}
-            />
-            <Bar dataKey="Sure" fill="var(--color-Sure, #2563eb)" radius={4} />
-          </BarChart>
-        )}
-      </ChartContainer>
-    </div>
+    <ChartContainer
+      config={chartConfig}
+      className="min-h-[300px] w-full" // max-w kaldırıldı, kart genişliğine uyacak
+    >
+      {isEmpty ? (
+        <div className="w-full h-[300px] flex flex-col items-center justify-center text-center p-4">
+          <CalendarDays className="w-16 h-16 text-muted-foreground mb-4" />
+          <p className="text-lg font-medium text-muted-foreground">Henüz Kayıtlı Tatbikat Yok</p>
+          <p className="text-sm text-muted-foreground">Yeni bir tatbikat başlattığınızda sonuçlar burada görünecektir.</p>
+        </div>
+      ) : (
+        <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+          <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.5} />
+          <XAxis
+            dataKey="eksen_x"
+            stroke="hsl(var(--muted-foreground))"
+            tick={{ fill: "hsl(var(--muted-foreground))" }}
+            tickLine={{ stroke: "hsl(var(--muted-foreground))" }}
+            axisLine={{ stroke: "hsl(var(--muted-foreground))" }}
+            interval={0}
+          />
+          <YAxis
+            stroke="hsl(var(--muted-foreground))"
+            tick={{ fill: "hsl(var(--muted-foreground))" }}
+            tickLine={{ stroke: "hsl(var(--muted-foreground))" }}
+            axisLine={{ stroke: "hsl(var(--muted-foreground))" }}
+          />
+          <Tooltip
+            cursor={{ fill: "hsl(var(--accent))", opacity: 0.3 }}
+            contentStyle={{
+              backgroundColor: "hsl(var(--background))",
+              borderColor: "hsl(var(--border))",
+              borderRadius: "0.5rem",
+              color: "hsl(var(--foreground))"
+            }}
+            labelStyle={{
+              fontWeight: 600,
+              color: "hsl(var(--foreground))"
+            }}
+          />
+          <Bar dataKey="Sure" fill="var(--color-Sure)" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      )}
+    </ChartContainer>
   );
 }
 
@@ -82,7 +75,8 @@ function TimerPanel({ onStop, onStart }: { onStop: (seconds: number) => void, on
   const handleStartStop = () => {
     if (!running) {
       setRunning(true);
-      onStart(); // Timer başlarken POST fonksiyonunu çağır
+      onStart();
+      setMilliseconds(0); // Her start'ta sıfırla
       intervalRef.current = setInterval(() => {
         setMilliseconds((prev) => prev + 10);
       }, 10);
@@ -94,7 +88,7 @@ function TimerPanel({ onStop, onStart }: { onStop: (seconds: number) => void, on
       }
       const seconds = Math.floor(milliseconds / 1000);
       onStop(seconds);
-      setMilliseconds(0);
+      // setMilliseconds(0); // Stop'ta sıfırlama, son süre görünsün
     }
   };
 
@@ -105,27 +99,39 @@ function TimerPanel({ onStop, onStart }: { onStop: (seconds: number) => void, on
   }, []);
 
   const seconds = Math.floor(milliseconds / 1000);
-  const ms = (milliseconds % 1000).toString().padStart(3, "0");
+  const ms = (milliseconds % 1000).toString().padStart(3, "000").slice(0, 2); // Sadece ilk iki haneyi al
 
   return (
-    <div className="flex flex-col gap-8 items-center justify-center w-full">
-      <h3 className="text-3xl font-semibold text-gray-800 dark:text-gray-100">Tatbikat Kontrol Paneli</h3>
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow p-6 min-w-[200px] flex flex-col items-center">
-        <span className="text-4xl font-mono text-gray-900 dark:text-gray-100">
-          {seconds}
-          <span className="text-lg">.{ms} sn</span>
-        </span>
-      </div>
-      <div className="flex gap-4 w-full justify-center">
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold flex items-center">
+          <Activity className="mr-2 h-6 w-6 text-primary" />
+          Tatbikat Kontrol Paneli
+        </CardTitle>
+        <CardDescription>Tatbikatınızı buradan başlatıp durdurabilirsiniz.</CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center justify-center gap-6 py-8">
+        <div className="text-center">
+          <span className="text-7xl font-mono font-bold text-primary tabular-nums">
+            {seconds}
+          </span>
+          <span className="text-3xl font-mono text-muted-foreground -ml-1">.{ms}</span>
+          <span className="text-xl ml-1 text-muted-foreground">sn</span>
+        </div>
         <Button
           variant={running ? "destructive" : "default"}
           onClick={handleStartStop}
-          className="w-32"
+          className="w-40 h-12 text-lg"
+          size="lg"
         >
-          {running ? "Stop" : "Start"}
+          {running ? <Square className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
+          {running ? "Durdur" : "Başlat"}
         </Button>
-      </div>
-    </div>
+      </CardContent>
+      <CardFooter className="text-xs text-muted-foreground text-center block">
+        Tatbikat süreniz otomatik olarak kaydedilecektir.
+      </CardFooter>
+    </Card>
   );
 }
 
@@ -134,29 +140,24 @@ export default function Dashboard() {
   const [userData, setUserData] = useState<any>(null);
   const [drillId, setDrillId] = useState<string | null>(null);
 
-  // GET fonksiyonu
-
   const fetchUserData = async () => {
     try {
       const response = await api.get('/earthquakeDrills');
       setUserData(response.data);
-
-      // Sadece tamamlanmış drill'leri al
       if (Array.isArray(response.data)) {
         const completedDrills = response.data.filter((d: any) => d.startTime && d.endTime);
         const newChartData = completedDrills.map((d: any, i: number) => {
           const start = new Date(d.startTime);
           const end = new Date(d.endTime);
           const diffSeconds = Math.round((end.getTime() - start.getTime()) / 1000);
-          const tarih = start.toLocaleDateString('tr-TR');
+          const tarih = start.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: '2-digit' });
           return {
-            eksen_x: `${tarih} - T ${i + 1}`,
+            eksen_x: `${tarih} - T${i + 1}`,
             Sure: diffSeconds,
           };
         });
         setChartData(newChartData);
       }
-
       return response.data;
     } catch (err) {
       console.error("Failed to fetch user data:", err);
@@ -168,14 +169,10 @@ export default function Dashboard() {
     fetchUserData();
   }, []);
 
-  // Drill başlat (startTime ile)
   const postDrillStart = async (startTime: string, userId: string) => {
     try {
       const response = await api.post('/earthquakeDrill', {
-        earthquakeDrill: {
-          startTime,
-          user: { id: userId }
-        }
+        earthquakeDrill: { startTime, user: { id: userId } }
       });
       setDrillId(response.data.id);
       console.log('Drill başlatıldı:', response.data);
@@ -184,14 +181,10 @@ export default function Dashboard() {
     }
   };
 
-  // Drill bitir (endTime ile)
   const postDrillEnd = async (id: string, endTime: string) => {
     try {
       const response = await api.post('/earthquakeDrill', {
-        earthquakeDrill: {
-          id,
-          endTime
-        }
+        earthquakeDrill: { id, endTime }
       });
       console.log('Drill bitirildi:', response.data);
     } catch (err) {
@@ -199,54 +192,38 @@ export default function Dashboard() {
     }
   };
 
-  // Timer başladığında çağrılır
   const handleTimerStart = () => {
     const startTime = new Date().toISOString();
     const userId = Cookies.get('user_id')!!;
     postDrillStart(startTime, userId);
   };
 
-  // Timer durduğunda çağrılır
-  const handleTimerStop = async () => {
-  if (!drillId) return;
-  const endTime = new Date().toISOString();
-  await postDrillEnd(drillId, endTime);
-  setDrillId(null);
-
-  // GET ile son verileri çek
-  const drills = await fetchUserData();
-  if (drills && Array.isArray(drills)) {
-    // Sadece tamamlanmış drill'leri al
-    const completedDrills = drills.filter((d: any) => d.startTime && d.endTime);
-
-    // Her biri için chartData oluştur
-    const newChartData = completedDrills.map((d: any, i: number) => {
-    const start = new Date(d.startTime);
-    const end = new Date(d.endTime);
-    const diffSeconds = Math.round((end.getTime() - start.getTime()) / 1000);
-    const tarih = start.toLocaleDateString('tr-TR');
-    return {
-      eksen_x: `${tarih} - T${i + 1}`, // T1, T2, T3 ...
-      Sure: diffSeconds,
-    };
-  });
-
-    setChartData(newChartData);
-  }
+  const handleTimerStop = async (seconds: number) => { // seconds parametresini tekrar ekledim
+    if (!drillId) return;
+    const endTime = new Date().toISOString();
+    await postDrillEnd(drillId, endTime);
+    setDrillId(null);
+    await fetchUserData(); // Verileri ve grafiği güncelle
   };
 
   return (
-    <div className="flex flex-col md:flex-row items-start gap-8 mt-8 justify-start w-full px-2">
-      {/* Sağ konteyner: Kontrol Paneli */}
-      <div className="flex flex-col w-full md:w-1/2">
-        <TimerPanel onStop={handleTimerStop} onStart={handleTimerStart} />
-      </div>
-      {/* Ayraç (sadece büyük ekranda göster) */}
-      <div className="hidden md:block w-px h-80 bg-gray-300 dark:bg-gray-700 mx-4" />
-      {/* Sol konteyner: Grafik */}
-      <div className="flex flex-col gap-10 items-center justify-center w-full md:w-1/2">
-        <h2 className="text-3xl font-semibold text-gray-800 dark:text-gray-100">Tatbikat Sonuçları</h2>
-        <ChartSection chartData={chartData} />
+    <div className="container mx-auto py-8 px-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        {/* Sol Konteyner: Kontrol Paneli */}
+        <div className="w-full">
+          <TimerPanel onStop={handleTimerStop} onStart={handleTimerStart} />
+        </div>
+
+        {/* Sağ Konteyner: Grafik */}
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold">Tatbikat Sonuçları</CardTitle>
+            <CardDescription>Tamamlanan tatbikat sürelerinizin grafiği.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartSection chartData={chartData} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
